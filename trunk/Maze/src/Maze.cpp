@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SFML/Window.hpp>
-#include <math.h>
+#include <cmath>
 #define _USE_MATH_DEFINES
 #include <iostream>
 #include <vector>
@@ -28,7 +28,7 @@ int xsize, ysize;                  // window size
 
 GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 1.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, 0.0, 1.0 }, {
 		1.0, 0.0, 1.0 }, { 1.0, 1.0, 1.0 }, { 0.0, 1.0, 1.0 } };
-
+GLfloat BROWN[3]={0.5,0.5,0};
 /* 2D point structure */
 typedef struct {
 	float x;
@@ -461,10 +461,22 @@ void incrementRotation() {
 	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*) rotation);
 }
 
+void drawFloor(){
+	glColor3fv(BROWN);
+	glBegin(GL_QUADS);
+	{
+		glVertex3f(-2.0,-2.0,-0.001);
+		glVertex3f(-2.0,2.0,-0.001);
+		glVertex3f(2.0,2.0,-0.001);
+		glVertex3f(2.0,-2.0,-0.001);
+	}glEnd();
+
+}
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	resetAndApplyAllTransforms();
 	draw_maze();
+	drawFloor();
 }
 
 // update the modelview matrix with a new translation in the z direction
