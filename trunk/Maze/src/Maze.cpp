@@ -12,6 +12,13 @@ using namespace std;
 #define TRUE 1
 #define FALSE 0
 
+#define RIGHT 1
+#define LEFT -1
+#define UP 1
+#define DOWN -1
+#define ROUND_PRECISION 50
+#define CIRC 2 * M_PI
+#define DTHETA CIRC / ROUND_PRECISION
 #define TRACKBALLSIZE (0.8)          // trackball size in percentage of window
 #define Z_SENSITIVITY 0.01           // used to scale translations in z
 #define XY_SENSITIVITY 0.01          // used to scale translations in x and y
@@ -444,7 +451,7 @@ void resetModelViewMatrix() {
 
 void setLookAt() {
 	if (displayMode != MAZE) {
-		gluLookAt(0.0, 0.0, 10.0, 0.0, 0.0, 9.0, 0.0, 1.0, 0.0);
+		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	} else {
 		gluLookAt(lookat[0], lookat[1], lookat[2], lookat[3], lookat[4], lookat[5], lookat[6], lookat[7], lookat[8]);
 	}
@@ -486,11 +493,24 @@ void drawFloor() {
 	glEnd();
 
 }
+
+void drawDot() {
+	glColor3f(1.0, 1.0, 0.0);
+	glPushMatrix();
+	glTranslatef(lookat[0], lookat[1], lookat[2]);
+	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, ROUND_PRECISION, ROUND_PRECISION);
+
+	glPopMatrix();
+}
+
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	resetAndApplyAllTransforms();
 	draw_maze();
 	drawFloor();
+	if (displayMode == TRACKBALL) {
+		drawDot();
+	}
 }
 
 // update the modelview matrix with a new translation in the z direction
@@ -746,6 +766,14 @@ private:
 	sf::Clock motionClock;
 	float timeSinceMotion;
 
+	void handleHorizontalCameraRotate(int direction) {
+
+	}
+
+	void handleHorizontalCameraMove(int direction) {
+
+	}
+
 	void handleEvents() {
 		const sf::Input& Input = App->GetInput();
 		bool shiftDown = Input.IsKeyDown(sf::Key::LShift) || Input.IsKeyDown(sf::Key::RShift);
@@ -760,19 +788,23 @@ private:
 				App->Close();
 
 			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Right)) {
-//				handleHorizontalCameraRotate(RIGHT);
+				if (displayMode == MAZE)
+					handleHorizontalCameraRotate(RIGHT);
 			}
 
 			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Left)) {
-//				handleHorizontalCameraRotate(LEFT);
+				if (displayMode == MAZE)
+					handleHorizontalCameraRotate(LEFT);
 			}
 
 			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Up)) {
-//				handleHorizontalCameraMove(UP);
+				if (displayMode == MAZE)
+					handleHorizontalCameraMove(UP);
 			}
 
 			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Down)) {
-//				handleHorizontalCameraMove(DOWN);
+				if (displayMode == MAZE)
+					handleHorizontalCameraMove(DOWN);
 			}
 
 			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::M)) {
