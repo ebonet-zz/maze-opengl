@@ -22,7 +22,7 @@ using namespace std;
 #define MAZE 0
 #define TRACKBALL 1
 
-int displayMode = TRACKBALL;
+int displayMode = MAZE;
 float motionTime = .0f;
 int lastPos[2] = { 0, 0 };
 int buttonDown[3] = { 0, 0 };
@@ -639,7 +639,7 @@ void gfxinit() {
 		// initialize the projection stack
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(30, 1.0, 0.1, 100);
+		gluPerspective(60, 1.0, 0.1, 100);
 
 		// initialize the modelview stack
 		glMatrixMode(GL_MODELVIEW);
@@ -659,12 +659,12 @@ void gfxinit() {
 		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation1);
 		glLoadIdentity();
 
-		lookat[0] = 0;
-		lookat[1] = 0;
+		lookat[0] = -1.8 + (1.8 / w);
+		lookat[1] = -1.8 + (1.8 / h);
 		lookat[2] = WALL_HEIGHT / 2.0;
 
-		lookat[3] = 0;
-		lookat[4] = 1;
+		lookat[3] = 1.8;
+		lookat[4] = -1.8 + (1.8 / h);
 		lookat[5] = WALL_HEIGHT / 2.0;
 
 		lookat[6] = 0.0;
@@ -758,6 +758,26 @@ private:
 			// Escape key : exit
 			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Escape))
 				App->Close();
+
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Right)) {
+//				handleHorizontalCameraRotate(RIGHT);
+			}
+
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Left)) {
+//				handleHorizontalCameraRotate(LEFT);
+			}
+
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Up)) {
+//				handleHorizontalCameraMove(UP);
+			}
+
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Down)) {
+//				handleHorizontalCameraMove(DOWN);
+			}
+
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::M)) {
+				displayMode = (displayMode + 1) % 2;
+			}
 
 			if (Event.Type == sf::Event::MouseButtonPressed) {
 				lastPos[0] = Event.MouseButton.X;
