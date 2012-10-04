@@ -36,11 +36,10 @@ int buttonDown[3] = { 0, 0 };
 int spin = FALSE;                    // are we spinning?
 int xsize, ysize;                  // window size
 
-float lookat[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
 GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, {
 		1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
 GLfloat GRAY[3] = { 0.5, 0.5, 0.5 };
+
 /* 2D point structure */
 typedef struct {
 	float x;
@@ -168,7 +167,11 @@ Point2 *vertex = NULL;
 vector<Wall> walls;
 
 // Storage space for the various transformations we'll need
-float translation1[16], translation2[16], rotation[16], inc_rotation[16];
+float trackballTranslation1[16], trackballTranslation2[16], trackballRotation[16], trackballIncRotation[16];
+float mazeTranslation[16],mazeRotation[16];
+float currentAngle = 0;
+float currentPositionX = 0;
+float currentPositionY = 0;
 
 #if 0
 GLfloat verticesTrackBall[][3] = { {-1.0, -1.0, -1.0},
@@ -183,8 +186,10 @@ GLfloat verticesTrackBall[][3] = { {-1.0, -1.0, -1.0},
 //GLfloat verticesTrackBall[][3] = { { 0.0, 0.0, 0.0 }, { 2.0, 0.0, 0.0 }, { 2.0, 2.0, 0.0 }, { 0.0, 2.0, 0.0 }, { 0.0,
 //		0.0, 2.0 }, { 2.0, 0.0, 2.0 }, { 2.0, 2.0, 2.0 }, { 0.0, 2.0, 2.0 } };
 
-GLfloat verticesTrackBall[][3] = { { 0.0, 0.0, 0.0 }, { w, 0.0, 0.0 }, { w, h, 0.0 }, { 0.0, h, 0.0 }, { 0.0, 0.0,
-		WALL_HEIGHT }, { w, 0.0, WALL_HEIGHT }, { w, h, WALL_HEIGHT }, { 0.0, h, WALL_HEIGHT } };
+GLfloat verticesTrackBall[][3] =
+		{ { 0.0, 0.0, 0.0 }, { w, 0.0, 0.0 }, { w, h, 0.0 }, { 0.0, h, 0.0 }, {
+				0.0, 0.0, WALL_HEIGHT }, { w, 0.0, WALL_HEIGHT }, { w, h,
+				WALL_HEIGHT }, { 0.0, h, WALL_HEIGHT } };
 #endif
 
 /* init_maze initializes a w1 by h1 maze.  all walls are initially
@@ -355,7 +360,7 @@ void remove_one_edge(void) {
 	redges--; /* decriment the number of removable edges */
 	/* if we're done, create an entrance and exit */
 	if (done) {
-		for (j = 0; j < 2; j++) {
+		for (j = 0; j < 1; j++) {
 			/* randomly select a perimeter edge */
 			k = rand() % (perimeters - j);
 			for (i = 0; i < perimeters; i++) {
@@ -418,42 +423,30 @@ void draw_maze(void) {
 	}
 }
 
-//// draw a rectangle using the index of each vertex and color
-//void draw_polygon(int a, int b, int c, int d, int face) {
-//	glBegin(GL_POLYGON);
-//	{
-//		glColor3fv(colors[a]);
-//		glVertex3fv(verticesTrackBall[a]);
-//		glColor3fv(colors[b]);
-//		glVertex3fv(verticesTrackBall[b]);
-//		glColor3fv(colors[c]);
-//		glVertex3fv(verticesTrackBall[c]);
-//		glColor3fv(colors[d]);
-//		glVertex3fv(verticesTrackBall[d]);
-//	}
-//	glEnd();
-//}
-//
-//// draw a cube
-//void draw_color_cube(void) {
-//	draw_polygon(1, 0, 3, 2, 0);
-//	draw_polygon(3, 7, 6, 2, 1);
-//	draw_polygon(7, 3, 0, 4, 2);
-//	draw_polygon(2, 6, 5, 1, 3);
-//	draw_polygon(4, 5, 6, 7, 4);
-//	draw_polygon(5, 4, 0, 1, 5);
-//}
-
 void resetModelViewMatrix() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
 
 void setLookAt() {
+
+	glLoadIdentity();
 	if (displayMode != MAZE) {
 		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	} else {
-		gluLookAt(lookat[0], lookat[1], lookat[2], lookat[3], lookat[4], lookat[5], lookat[6], lookat[7], lookat[8]);
+		cout << "Camera position: " << "(" <<currentPositionX << "," << currentPositionY << ")" << endl;
+		cout << "Center position: " << "(" <<currentPositionX+cos(currentAngle) << "," << currentPositionY+sin(currentAngle) << ")" << endl;
+
+
+		gluLookAt(
+				currentPositionX, currentPositionY, WALL_HEIGHT / 2.0,
+				currentPositionX+cos(currentAngle), currentPositionY+sin(currentAngle), WALL_HEIGHT / 2.0,
+				0.0,0.0,1.0);
+
+		//gluLookAt(
+			//			currentPositionX, currentPositionY, WALL_HEIGHT / 2.0,
+				//		currentPositionX+cos(currentAngle), currentPositionY+sin(currentAngle), WALL_HEIGHT / 2.0,
+					//	0.0,0.0,1.0);
 	}
 }
 
@@ -464,9 +457,9 @@ void resetAndApplyAllTransforms() {
 	// Set the viewing to the same value as came in default
 	setLookAt();
 
-	glMultMatrixf(translation2);
-	glMultMatrixf(rotation);
-	glMultMatrixf(translation1);
+	glMultMatrixf(trackballTranslation2);
+	glMultMatrixf(trackballRotation);
+	glMultMatrixf(trackballTranslation1);
 }
 
 void incrementRotation() {
@@ -474,21 +467,21 @@ void incrementRotation() {
 	resetModelViewMatrix();
 
 	// Accumulate rotation and increment
-	glMultMatrixf(inc_rotation);
-	glMultMatrixf(rotation);
+	glMultMatrixf(trackballIncRotation);
+	glMultMatrixf(trackballRotation);
 
 	// Save for future use
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*) rotation);
+	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*) trackballRotation);
 }
 
 void drawFloor() {
 	glColor3fv(GRAY);
 	glBegin(GL_QUADS);
 	{
-		glVertex3f(-2.0, -2.0, -0.001);
-		glVertex3f(-2.0, 2.0, -0.001);
-		glVertex3f(2.0, 2.0, -0.001);
-		glVertex3f(2.0, -2.0, -0.001);
+		glVertex3f(-1.9, -1.5, -0.001);
+		glVertex3f(-1.9, 1.5, -0.001);
+		glVertex3f(1.9, 1.5, -0.001);
+		glVertex3f(1.9, -1.5, -0.001);
 	}
 	glEnd();
 
@@ -497,9 +490,14 @@ void drawFloor() {
 void drawDot() {
 	glColor3f(1.0, 1.0, 0.0);
 	glPushMatrix();
-	glTranslatef(lookat[0], lookat[1], lookat[2]);
-	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, ROUND_PRECISION, ROUND_PRECISION);
+	glTranslatef(currentPositionX, currentPositionY, 0.0);
+	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, 4.0,
+			4.0);
 
+	gluCylinder(gluNewQuadric(), WALL_WIDTH_DELTA, WALL_WIDTH_DELTA, 0.6, 4.0, 4.0);
+
+	glTranslatef(0.0, 0.0, 0.6);
+	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, 4.0, 4.0);
 	glPopMatrix();
 }
 
@@ -525,13 +523,13 @@ void update_z(int x1, int y1, int x2, int y2) {
 	resetModelViewMatrix();
 
 	// Then, lets restore only what we had for translation before
-	glMultMatrixf(translation2);
+	glMultMatrixf(trackballTranslation2);
 
 	// Now lets apply the new Z translation on top of that
 	glTranslatef(0, 0, translationOnZ);
 
 	// We now have the new accumulated translation values, lets save it back so we can use it later
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation2);
+	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation2);
 }
 
 // update the modelview matrix with a new translation in the x and/or y direction
@@ -545,13 +543,13 @@ void update_trans(int x1, int y1, int x2, int y2) {
 	resetModelViewMatrix();
 
 	// Then, lets restore only what we had for translation before
-	glMultMatrixf(translation2);
+	glMultMatrixf(trackballTranslation2);
 
 	// Now lets apply the new X and Y translation on top of that
 	glTranslatef(translationOnX, translationOnY, 0);
 
 	// We now have the new accumulated translation values, lets save it back so we can use it later
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation2);
+	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation2);
 }
 
 // find the z coordinate corresponding to the mouse position
@@ -602,8 +600,10 @@ void update_rotate(int x1, int y1, int x2, int y2) {
 		// the amount of rotation is proportional to the magnitude of the
 		// difference between the vectors
 		t = sqrt(
-				(p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
-						+ (p1[2] - p2[2]) * (p1[2] - p2[2])) / (2.0 * TRACKBALLSIZE);
+				(p1[0] - p2[0]) * (p1[0] - p2[0])
+						+ (p1[1] - p2[1]) * (p1[1] - p2[1])
+						+ (p1[2] - p2[2]) * (p1[2] - p2[2]))
+				/ (2.0 * TRACKBALLSIZE);
 
 		if (t > 1.0) {
 			t = 1.0;
@@ -622,13 +622,13 @@ void update_rotate(int x1, int y1, int x2, int y2) {
 
 	// This should give us our incremental rotation factor
 	// Lets save it for future use
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*) inc_rotation);
+	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*) trackballIncRotation);
 
 	// Now, apply the incremental factor on what we already had for rotation
-	glMultMatrixf(rotation);
+	glMultMatrixf(trackballRotation);
 
 	// Finally, save the accumulated total rotation for future use
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*) rotation);
+	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*) trackballRotation);
 }
 
 // function used to spin the object.
@@ -646,9 +646,11 @@ void reshape(int w, int h) {
 	// default aspectRatio was 1.0
 	GLfloat newAspectRatio = ((float) xsize) / ((float) ysize);
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60.0, newAspectRatio, 0.1, 100);
+	//glMatrixMode(GL_PROJECTION);
+	//glLoadIdentity();
+	//gluPerspective(60.0, newAspectRatio, 0.1, 100);
+	//glLoadIdentity();
+
 }
 
 void gfxinit() {
@@ -666,9 +668,9 @@ void gfxinit() {
 		// initialize the modelview stack
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation2);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &rotation);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &inc_rotation);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation2);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballRotation);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballIncRotation);
 		for (i = 0; i < 8; i++) {
 			x += verticesTrackBall[i][0];
 			y += verticesTrackBall[i][1];
@@ -678,28 +680,19 @@ void gfxinit() {
 		y /= 8;
 		z /= 8;
 		glTranslatef(-x, -y, -z);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation1);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation1);
 		glLoadIdentity();
 
-		lookat[0] = -1.8 + (1.8 / w);
-		lookat[1] = -1.8 + (1.8 / h);
-		lookat[2] = WALL_HEIGHT / 2.0;
+		currentPositionX = 0.0;
+		currentPositionY = 0.0;
 
-		lookat[3] = 1.8;
-		lookat[4] = -1.8 + (1.8 / h);
-		lookat[5] = WALL_HEIGHT / 2.0;
-
-		lookat[6] = 0.0;
-		lookat[7] = 0.0;
-		lookat[8] = 1.0;
-		setLookAt();
-
-		glMultMatrixf(translation1);
+		//glMultMatrixf(trackballTranslation1);
 
 		glViewport(0, 0, RESOLUTION, RESOLUTION);
 		xsize = RESOLUTION;
 		ysize = RESOLUTION;
 
+		setLookAt();
 		build_maze();
 	} else {
 		int i;
@@ -715,9 +708,9 @@ void gfxinit() {
 		// initialize the modelview stack
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation2);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &rotation);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &inc_rotation);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation2);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballRotation);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballIncRotation);
 		for (i = 0; i < 8; i++) {
 			x += verticesTrackBall[i][0];
 			y += verticesTrackBall[i][1];
@@ -727,10 +720,10 @@ void gfxinit() {
 		y /= 8;
 		z /= 8;
 		glTranslatef(-x, -y, -z);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation1);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation1);
 		glLoadIdentity();
 		setLookAt();
-		glMultMatrixf(translation1);
+		glMultMatrixf(trackballTranslation1);
 
 		glViewport(0, 0, RESOLUTION, RESOLUTION);
 		xsize = RESOLUTION;
@@ -743,7 +736,8 @@ void gfxinit() {
 class GLBox {
 public:
 	GLBox() {
-		App = new sf::Window(sf::VideoMode(RESOLUTION, RESOLUTION, 32), "Trackball");
+		App = new sf::Window(sf::VideoMode(RESOLUTION, RESOLUTION, 32),
+				"Trackball");
 
 		gfxinit();
 
@@ -769,19 +763,28 @@ private:
 	sf::Clock motionClock;
 	float timeSinceMotion;
 
+	void updateView(){
+		setLookAt();
+		//glRotatef(currentAngle, 0, 0, 1);
+	}
+
 	void handleHorizontalCameraRotate(int direction) {
-		glTranslatef(lookat[0], lookat[1], lookat[2]);
-		glRotatef(2*direction, 0, 0, 1);
-		glTranslatef(-lookat[0], -lookat[1], -lookat[2]);
+		currentAngle-=2*direction*0.05;
+		setLookAt();
 	}
 
 	void handleHorizontalCameraMove(int direction) {
-
+		currentPositionX += cos(currentAngle)*direction*0.05;
+		currentPositionY += sin(currentAngle)*direction*0.05;
+		cout << "(" << currentPositionX << "," << currentPositionY << ")" << endl;
+		setLookAt();
 	}
+
 
 	void handleEvents() {
 		const sf::Input& Input = App->GetInput();
-		bool shiftDown = Input.IsKeyDown(sf::Key::LShift) || Input.IsKeyDown(sf::Key::RShift);
+		bool shiftDown = Input.IsKeyDown(sf::Key::LShift)
+				|| Input.IsKeyDown(sf::Key::RShift);
 		sf::Event Event;
 		while (App->GetEvent(Event)) {
 			// Close window : exit
@@ -789,31 +792,38 @@ private:
 				App->Close();
 
 			// Escape key : exit
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Escape))
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Escape))
 				App->Close();
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Right)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Right)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraRotate(RIGHT);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Left)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Left)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraRotate(LEFT);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Up)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Up)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraMove(UP);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Down)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Down)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraMove(DOWN);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::M)) {
-				resetModelViewMatrix();
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::M)) {
+				//resetModelViewMatrix();
+				glLoadIdentity();
 				displayMode = (displayMode + 1) % 2;
 				setLookAt();
 			}
@@ -823,7 +833,8 @@ private:
 					lastPos[0] = Event.MouseButton.X;
 					lastPos[1] = Event.MouseButton.Y;
 
-					if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown) {
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& !shiftDown) {
 						buttonDown[0] = 1;
 						spin = FALSE;
 					}
@@ -831,18 +842,21 @@ private:
 						buttonDown[1] = 1;
 					if (Event.MouseButton.Button == sf::Mouse::Middle)
 						buttonDown[2] = 1;
-					if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& shiftDown)
 						buttonDown[2] = 1;
 				}
 
 				if (Event.Type == sf::Event::MouseButtonReleased) {
-					if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& !shiftDown)
 						buttonDown[0] = 0;
 					if (Event.MouseButton.Button == sf::Mouse::Right)
 						buttonDown[1] = 0;
 					if (Event.MouseButton.Button == sf::Mouse::Middle)
 						buttonDown[2] = 0;
-					if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& shiftDown)
 						buttonDown[2] = 0;
 
 					timeSinceMotion = motionClock.GetElapsedTime();
@@ -851,7 +865,8 @@ private:
 						spin = TRUE;
 				}
 
-				if (Event.Type == sf::Event::MouseMoved && (buttonDown[0] || buttonDown[1] || buttonDown[2])) {
+				if (Event.Type == sf::Event::MouseMoved
+						&& (buttonDown[0] || buttonDown[1] || buttonDown[2])) {
 					int x = Event.MouseMove.X;
 					int y = Event.MouseMove.Y;
 
@@ -879,8 +894,8 @@ private:
 int main(int argc, char **argv) {
 	/* check that there are sufficient arguments */
 	if (argc < 3) {
-		w = 6;
-		h = 6;
+		w = 10;
+		h = 10;
 		fprintf(stderr,"The width and height can be specified as command line arguments. Defaulting to %i %i\n", w, h);
 	}
 	else {
