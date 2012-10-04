@@ -683,8 +683,8 @@ void gfxinit() {
 		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation1);
 		glLoadIdentity();
 
-		currentPositionX = 0.0;
-		currentPositionY = 0.0;
+		currentPositionX = -1.6+rand()%4;
+		currentPositionY = -1.3+rand()%3;
 
 		//glMultMatrixf(trackballTranslation1);
 
