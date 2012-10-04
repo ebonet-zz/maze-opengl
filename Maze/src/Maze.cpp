@@ -38,8 +38,8 @@ int xsize, ysize;                  // window size
 
 float lookat[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, {
-		1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 } };
+GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, {
+		1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
 GLfloat GRAY[3] = { 0.5, 0.5, 0.5 };
 /* 2D point structure */
 typedef struct {
@@ -770,7 +770,9 @@ private:
 	float timeSinceMotion;
 
 	void handleHorizontalCameraRotate(int direction) {
-		glRotatef(90 * direction, 0, 0, 1);
+		glTranslatef(lookat[0], lookat[1], lookat[2]);
+		glRotatef(2*direction, 0, 0, 1);
+		glTranslatef(-lookat[0], -lookat[1], -lookat[2]);
 	}
 
 	void handleHorizontalCameraMove(int direction) {
