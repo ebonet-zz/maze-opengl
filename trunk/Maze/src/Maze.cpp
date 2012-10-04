@@ -17,18 +17,23 @@ using namespace std;
 #define XY_SENSITIVITY 0.01          // used to scale translations in x and y
 #define TARGET_FPS 30                // controls spin update rate
 #define TIME_WINDOW 3                // number of frames motion is valid after release
-#define WALL_WIDTH_DELTA 0.1
+#define WALL_WIDTH_DELTA 0.05
 #define WALL_HEIGHT 0.3
+#define MAZE 0
+#define TRACKBALL 1
 
+int displayMode = TRACKBALL;
 float motionTime = .0f;
 int lastPos[2] = { 0, 0 };
 int buttonDown[3] = { 0, 0 };
 int spin = FALSE;                    // are we spinning?
 int xsize, ysize;                  // window size
 
-GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 1.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, 0.0, 1.0 }, {
-		1.0, 0.0, 1.0 }, { 1.0, 1.0, 1.0 }, { 0.0, 1.0, 1.0 } };
-GLfloat BROWN[3]={0.5,0.5,0};
+float lookat[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, {
+		1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 } };
+GLfloat GRAY[3] = { 0.5, 0.5, 0.5 };
 /* 2D point structure */
 typedef struct {
 	float x;
@@ -437,12 +442,20 @@ void resetModelViewMatrix() {
 	glLoadIdentity();
 }
 
+void setLookAt() {
+	if (displayMode != MAZE) {
+		gluLookAt(0.0, 0.0, 10.0, 0.0, 0.0, 9.0, 0.0, 1.0, 0.0);
+	} else {
+		gluLookAt(lookat[0], lookat[1], lookat[2], lookat[3], lookat[4], lookat[5], lookat[6], lookat[7], lookat[8]);
+	}
+}
+
 void resetAndApplyAllTransforms() {
 	// Clean any mess
 	resetModelViewMatrix();
 
 	// Set the viewing to the same value as came in default
-	gluLookAt(0.0, 0.0, 10.0, 0.0, 0.0, 9.0, 0.0, 1.0, 0.0);
+	setLookAt();
 
 	glMultMatrixf(translation2);
 	glMultMatrixf(rotation);
@@ -461,15 +474,16 @@ void incrementRotation() {
 	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*) rotation);
 }
 
-void drawFloor(){
-	glColor3fv(BROWN);
+void drawFloor() {
+	glColor3fv(GRAY);
 	glBegin(GL_QUADS);
 	{
-		glVertex3f(-2.0,-2.0,-0.001);
-		glVertex3f(-2.0,2.0,-0.001);
-		glVertex3f(2.0,2.0,-0.001);
-		glVertex3f(2.0,-2.0,-0.001);
-	}glEnd();
+		glVertex3f(-2.0, -2.0, -0.001);
+		glVertex3f(-2.0, 2.0, -0.001);
+		glVertex3f(2.0, 2.0, -0.001);
+		glVertex3f(2.0, -2.0, -0.001);
+	}
+	glEnd();
 
 }
 void display() {
@@ -616,41 +630,92 @@ void reshape(int w, int h) {
 }
 
 void gfxinit() {
-	int i;
-	float x = 0, y = 0, z = 0;
+	if (displayMode == MAZE) {
+		int i;
+		float x = 0, y = 0, z = 0;
 
-	glEnable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);
 
-	// initialize the projection stack
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60.0, 1.0, 0.1, 100);
+		// initialize the projection stack
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(30, 1.0, 0.1, 100);
 
-	// initialize the modelview stack
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation2);
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &rotation);
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &inc_rotation);
-	for (i = 0; i < 8; i++) {
-		x += verticesTrackBall[i][0];
-		y += verticesTrackBall[i][1];
-		z += verticesTrackBall[i][2];
+		// initialize the modelview stack
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation2);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &rotation);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &inc_rotation);
+		for (i = 0; i < 8; i++) {
+			x += verticesTrackBall[i][0];
+			y += verticesTrackBall[i][1];
+			z += verticesTrackBall[i][2];
+		}
+		x /= 8;
+		y /= 8;
+		z /= 8;
+		glTranslatef(-x, -y, -z);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation1);
+		glLoadIdentity();
+
+		lookat[0] = 0;
+		lookat[1] = 0;
+		lookat[2] = WALL_HEIGHT / 2.0;
+
+		lookat[3] = 0;
+		lookat[4] = 1;
+		lookat[5] = WALL_HEIGHT / 2.0;
+
+		lookat[6] = 0.0;
+		lookat[7] = 0.0;
+		lookat[8] = 1.0;
+		setLookAt();
+
+		glMultMatrixf(translation1);
+
+		glViewport(0, 0, RESOLUTION, RESOLUTION);
+		xsize = RESOLUTION;
+		ysize = RESOLUTION;
+
+		build_maze();
+	} else {
+		int i;
+		float x = 0, y = 0, z = 0;
+
+		glEnable(GL_DEPTH_TEST);
+
+		// initialize the projection stack
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(30, 1.0, 0.1, 100);
+
+		// initialize the modelview stack
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation2);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &rotation);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &inc_rotation);
+		for (i = 0; i < 8; i++) {
+			x += verticesTrackBall[i][0];
+			y += verticesTrackBall[i][1];
+			z += verticesTrackBall[i][2];
+		}
+		x /= 8;
+		y /= 8;
+		z /= 8;
+		glTranslatef(-x, -y, -z);
+		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation1);
+		glLoadIdentity();
+		setLookAt();
+		glMultMatrixf(translation1);
+
+		glViewport(0, 0, RESOLUTION, RESOLUTION);
+		xsize = RESOLUTION;
+		ysize = RESOLUTION;
+
+		build_maze();
 	}
-	x /= 8;
-	y /= 8;
-	z /= 8;
-	glTranslatef(-x, -y, -z);
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &translation1);
-	glLoadIdentity();
-	gluLookAt(0.0, 0.0, 10.0, 0.0, 0.0, 9.0, 0.0, 1.0, 0.0);
-	glMultMatrixf(translation1);
-
-	glViewport(0, 0, RESOLUTION, RESOLUTION);
-	xsize = RESOLUTION;
-	ysize = RESOLUTION;
-
-	build_maze();
 }
 
 class GLBox {
@@ -754,7 +819,7 @@ private:
 int main(int argc, char **argv) {
 	/* check that there are sufficient arguments */
 	if (argc < 3) {
-		w = 5;
+		w = 6;
 		h = 6;
 		fprintf(stderr,"The width and height can be specified as command line arguments. Defaulting to %i %i\n", w, h);
 	}
