@@ -505,7 +505,9 @@ void drawDot() {
 
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	resetAndApplyAllTransforms();
+	if (displayMode == TRACKBALL) {
+		resetAndApplyAllTransforms();
+	}
 	draw_maze();
 	drawFloor();
 	if (displayMode == TRACKBALL) {
@@ -754,7 +756,8 @@ public:
 			App->SetActive();
 
 			handleEvents();
-			SpinCube2(0);
+			if (displayMode == TRACKBALL)
+				SpinCube2(0);
 			display();
 
 			App->Display();
@@ -767,7 +770,7 @@ private:
 	float timeSinceMotion;
 
 	void handleHorizontalCameraRotate(int direction) {
-
+		glRotatef(90 * direction, 0, 0, 1);
 	}
 
 	void handleHorizontalCameraMove(int direction) {
@@ -808,59 +811,62 @@ private:
 			}
 
 			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::M)) {
+				resetModelViewMatrix();
 				displayMode = (displayMode + 1) % 2;
+				setLookAt();
 			}
 
-			if (Event.Type == sf::Event::MouseButtonPressed) {
-				lastPos[0] = Event.MouseButton.X;
-				lastPos[1] = Event.MouseButton.Y;
+			if (displayMode == TRACKBALL) {
+				if (Event.Type == sf::Event::MouseButtonPressed) {
+					lastPos[0] = Event.MouseButton.X;
+					lastPos[1] = Event.MouseButton.Y;
 
-				if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown) {
-					buttonDown[0] = 1;
-					spin = FALSE;
+					if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown) {
+						buttonDown[0] = 1;
+						spin = FALSE;
+					}
+					if (Event.MouseButton.Button == sf::Mouse::Right)
+						buttonDown[1] = 1;
+					if (Event.MouseButton.Button == sf::Mouse::Middle)
+						buttonDown[2] = 1;
+					if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
+						buttonDown[2] = 1;
 				}
-				if (Event.MouseButton.Button == sf::Mouse::Right)
-					buttonDown[1] = 1;
-				if (Event.MouseButton.Button == sf::Mouse::Middle)
-					buttonDown[2] = 1;
-				if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
-					buttonDown[2] = 1;
+
+				if (Event.Type == sf::Event::MouseButtonReleased) {
+					if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown)
+						buttonDown[0] = 0;
+					if (Event.MouseButton.Button == sf::Mouse::Right)
+						buttonDown[1] = 0;
+					if (Event.MouseButton.Button == sf::Mouse::Middle)
+						buttonDown[2] = 0;
+					if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
+						buttonDown[2] = 0;
+
+					timeSinceMotion = motionClock.GetElapsedTime();
+					float maxTime = 1.0f / (float) TARGET_FPS * TIME_WINDOW;
+					if (timeSinceMotion < maxTime)
+						spin = TRUE;
+				}
+
+				if (Event.Type == sf::Event::MouseMoved && (buttonDown[0] || buttonDown[1] || buttonDown[2])) {
+					int x = Event.MouseMove.X;
+					int y = Event.MouseMove.Y;
+
+					timeSinceMotion = motionClock.GetElapsedTime();
+					motionClock.Reset();
+
+					if (buttonDown[0])
+						update_rotate(lastPos[0], lastPos[1], x, y);
+					if (buttonDown[1])
+						update_trans(lastPos[0], lastPos[1], x, y);
+					if (buttonDown[2])
+						update_z(lastPos[0], lastPos[1], x, y);
+
+					lastPos[0] = x;
+					lastPos[1] = y;
+				}
 			}
-
-			if (Event.Type == sf::Event::MouseButtonReleased) {
-				if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown)
-					buttonDown[0] = 0;
-				if (Event.MouseButton.Button == sf::Mouse::Right)
-					buttonDown[1] = 0;
-				if (Event.MouseButton.Button == sf::Mouse::Middle)
-					buttonDown[2] = 0;
-				if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
-					buttonDown[2] = 0;
-
-				timeSinceMotion = motionClock.GetElapsedTime();
-				float maxTime = 1.0f / (float) TARGET_FPS * TIME_WINDOW;
-				if (timeSinceMotion < maxTime)
-					spin = TRUE;
-			}
-
-			if (Event.Type == sf::Event::MouseMoved && (buttonDown[0] || buttonDown[1] || buttonDown[2])) {
-				int x = Event.MouseMove.X;
-				int y = Event.MouseMove.Y;
-
-				timeSinceMotion = motionClock.GetElapsedTime();
-				motionClock.Reset();
-
-				if (buttonDown[0])
-					update_rotate(lastPos[0], lastPos[1], x, y);
-				if (buttonDown[1])
-					update_trans(lastPos[0], lastPos[1], x, y);
-				if (buttonDown[2])
-					update_z(lastPos[0], lastPos[1], x, y);
-
-				lastPos[0] = x;
-				lastPos[1] = y;
-			}
-
 			if (Event.Type == sf::Event::Resized) {
 				reshape(Event.Size.Width, Event.Size.Height);
 			}
