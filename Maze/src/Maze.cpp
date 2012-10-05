@@ -474,10 +474,10 @@ void drawFloor() {
 	glColor3fv(GRAY);
 	glBegin(GL_QUADS);
 	{
-		glVertex3f(-1.9, -1.5, -0.001);
-		glVertex3f(-1.9, 1.5, -0.001);
-		glVertex3f(1.9, 1.5, -0.001);
-		glVertex3f(1.9, -1.5, -0.001);
+		glVertex3f(-1.9, -1.9, -0.001);
+		glVertex3f(-1.9, 1.9, -0.001);
+		glVertex3f(1.9, 1.9, -0.001);
+		glVertex3f(1.9, -1.9, -0.001);
 	}
 	glEnd();
 
@@ -888,8 +888,8 @@ private:
 int main(int argc, char **argv) {
 	/* check that there are sufficient arguments */
 	if (argc < 3) {
-		w = 10;
-		h = 10;
+		w = 6;
+		h = 6;
 		fprintf(stderr,"The width and height can be specified as command line arguments. Defaulting to %i %i\n", w, h);
 	}
 	else {
