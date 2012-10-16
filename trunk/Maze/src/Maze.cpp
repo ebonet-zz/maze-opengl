@@ -796,12 +796,14 @@ private:
 		lightPos[1] = 1.0;
 		lightPos[2] = 1.0;
 
-		glUniform4f(glGetUniformLocation(prog, "color"), color[0], color[1],
-				color[2], color[3]);
+		//glUniform4f(glGetUniformLocation(prog, "color"), color[0], color[1],
+		//		color[2], color[3]);
 
 		glUniform3f(glGetUniformLocation(prog, "lightPos"),
 							lightPos[0], lightPos[1], lightPos[2]);
 
+		glUniform1f(glGetUniformLocation(prog, "elapsedTime"),
+							motionClock.GetElapsedTime());
 		glUniform1f(glGetUniformLocation(prog, "elapsedTime"), motionClock.GetElapsedTime());
 		glUniform1f(glGetUniformLocation(prog, "cameraX"), currentPositionX);
 		glUniform1f(glGetUniformLocation(prog, "cameraY"), currentPositionY);
