@@ -1,28 +1,17 @@
 // Computes fragment colors
 
-varying vec4 color;
 uniform float elapsedTime;
-varying vec3 normal;  //normal that will be interpolated for the fragment shader
-varying vec4 vertexPosition;
-
 uniform float currentPositionX;
 uniform float currentPositionY;
 
+varying vec4 color;
+varying vec3 normal;  //normal that will be interpolated for the fragment shader
+varying vec4 vertexPosition;
+varying vec3 lightVector;
 
 void main()
 {	
-
-	// lightPos[0]=2.0*cos(elapsedTime);
-	// lightPos[1]=2.0*cos(elapsedTime);
-	// lightPos[2]=1.0;
+	float scale = dot(lightVector, normal);
 	
-	gl_FragColor = color;
-	//lightPos = vec3(0.0, 0.0, 0.0);
-	
-	float distance = distance(lightPos.xyz, vertexPosition.xyz);
-	
-	float scale = dot(lightPos, normal);
-	
-	gl_FragColor = color /(distance);
-	
+	gl_FragColor = color * scale;
 }
