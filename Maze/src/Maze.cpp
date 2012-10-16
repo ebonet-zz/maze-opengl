@@ -55,6 +55,14 @@ GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 },
 		{ 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
 GLfloat GRAY[3] = { 0.5, 0.5, 0.5 };
 
+
+GLfloat faceNormals[][3] = {{ -1.0, 0.0, 0.0 },
+							 { 1.0, 0.0, 0.0 },
+							 { 0.0,-1.0, 0.0 },
+							 { 0.0, 1.0, 0.0 },
+							 { 0.0, 0.0, -1.0 },
+							 { 0.0, 0.0, 1.0 }};
+
 /* 2D point structure */
 typedef struct {
 	float x;
@@ -74,7 +82,6 @@ typedef struct {
 struct Wall {
 	GLfloat vertices[8][3];
 
-
 	Wall(GLfloat * newVertices) {
 		memcpy(vertices, newVertices, 24 * sizeof(GLfloat));
 	}
@@ -86,6 +93,7 @@ struct Wall {
 			vertices[0][0] = p1->x - WALL_WIDTH_DELTA;
 			vertices[0][1] = p1->y - WALL_WIDTH_DELTA;
 			vertices[0][2] = 0.0;
+
 
 			vertices[1][0] = p1->x - WALL_WIDTH_DELTA;
 			vertices[1][1] = p1->y - WALL_WIDTH_DELTA;
@@ -150,9 +158,10 @@ struct Wall {
 		}
 	}
 
-	void draw_mesh(int a, int b, int c, int d) {
+	void draw_mesh(int a, int b, int c, int d,int normal) {
 		glBegin(GL_POLYGON);
 		{
+			glNormal3fv(faceNormals[normal]);
 			glColor3fv(colors[a]);
 			glVertex3fv(vertices[a]);
 			glColor3fv(colors[b]);
@@ -166,12 +175,12 @@ struct Wall {
 	}
 
 	void draw() {
-		draw_mesh(1, 0, 3, 2);
-		draw_mesh(3, 7, 6, 2);
-		draw_mesh(7, 3, 0, 4);
-		draw_mesh(2, 6, 5, 1);
-		draw_mesh(4, 5, 6, 7);
-		draw_mesh(5, 4, 0, 1);
+		draw_mesh(1, 0, 3, 2, 2);
+		draw_mesh(3, 7, 6, 2, 1);
+		draw_mesh(7, 3, 0, 4, 4);
+		draw_mesh(2, 6, 5, 1, 5);
+		draw_mesh(4, 5, 6, 7, 3);
+		draw_mesh(5, 4, 0, 1, 0);
 	}
 
 };
@@ -436,8 +445,7 @@ void setLookAt() {
 	if (displayMode != MAZE) {
 		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	} else {
-		cout << "Camera position: " << "(" << currentPositionX << ","
-				<< currentPositionY << ")" << endl;
+
 		cout << "Center position: " << "("
 				<< currentPositionX + cos(currentAngle) << ","
 				<< currentPositionY + sin(currentAngle) << ")" << endl;
@@ -779,7 +787,6 @@ private:
 
 	void updateView() {
 		setLookAt();
-		//glRotatef(currentAngle, 0, 0, 1);
 	}
 
 	void renderScene() {
@@ -792,21 +799,26 @@ private:
 		color[1] = 0.8;
 		color[2] = 0.2;
 		color[4] = 1.0;
-		lightPos[0] = 3.0;
-		lightPos[1] = 1.0;
-		lightPos[2] = 1.0;
+		lightPos[0] = 0.0;
+		lightPos[1] = 0.0;
+		lightPos[2] = 0.0;
 
 		//glUniform4f(glGetUniformLocation(prog, "color"), color[0], color[1],
 		//		color[2], color[3]);
 
-		glUniform3f(glGetUniformLocation(prog, "lightPos"),
-							lightPos[0], lightPos[1], lightPos[2]);
+		glUniform3f(glGetUniformLocation(prog, "lightPos"), lightPos[0],
+				lightPos[1], lightPos[2]);
 
 		glUniform1f(glGetUniformLocation(prog, "elapsedTime"),
-							motionClock.GetElapsedTime());
-		glUniform1f(glGetUniformLocation(prog, "elapsedTime"), motionClock.GetElapsedTime());
-		glUniform1f(glGetUniformLocation(prog, "cameraX"), currentPositionX);
-		glUniform1f(glGetUniformLocation(prog, "cameraY"), currentPositionY);
+				motionClock.GetElapsedTime());
+		glUniform1f(glGetUniformLocation(prog, "elapsedTime"),
+				motionClock.GetElapsedTime());
+
+		//cout << "LightPosition: (" << currentPositionX << ", " << currentPositionY << " )" <<endl;
+		glUniform1f(glGetUniformLocation(prog, "cameraX"),
+				currentPositionX + cos(currentAngle));
+		glUniform1f(glGetUniformLocation(prog, "cameraY"),
+				currentPositionY + sin(currentAngle));
 
 	}
 
