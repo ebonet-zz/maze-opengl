@@ -11,7 +11,8 @@ varying vec3 lightVector;
 
 void main()
 {	
-	float scale = dot(lightVector, normal);
+	float scale = dot(normalize(lightVector), normalize(normal));
 	
+	if(scale<0) scale = 0;
 	gl_FragColor = color * scale;
 }

@@ -4,13 +4,22 @@ ARB vertex programs supported.
 ARB fragment programs supported.
 Shader info log for:
   Shaders/shader.vert
-Vertex shader was successfully compiled to run on hardware.
+0(22) : warning C7011: implicit cast from "vec4" to "vec3"
 
 Shader info log for:
   Shaders/shader.frag
-Fragment shader was successfully compiled to run on hardware.
+0(16) : warning C7011: implicit cast from "int" to "float"
+0(16) : warning C7011: implicit cast from "int" to "float"
+
 Shader program info log for:
   Shaders/shader.vert
   Shaders/shader.frag
-Fragment shader(s) linked, vertex shader(s) linked. 
- 
+Vertex info
+-----------
+0(22) : warning C7011: implicit cast from "vec4" to "vec3"
+
+Fragment info
+-------------
+0(16) : warning C7011: implicit cast from "int" to "float"
+0(16) : warning C7011: implicit cast from "int" to "float"
+

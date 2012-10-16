@@ -154,7 +154,6 @@ struct Wall {
 	void draw_mesh(int a, int b, int c, int d, int normal) {
 		glBegin(GL_POLYGON);
 		{
-			glNormal3fv(faceNormals[normal]);
 			glColor3fv(colors[a]);
 			glVertex3fv(vertices[a]);
 			glColor3fv(colors[b]);
@@ -163,6 +162,7 @@ struct Wall {
 			glVertex3fv(vertices[c]);
 			glColor3fv(colors[d]);
 			glVertex3fv(vertices[d]);
+			glNormal3fv(faceNormals[normal]);
 		}
 		glEnd();
 	}
@@ -473,10 +473,12 @@ void drawFloor() {
 	glColor3fv(GRAY);
 	glBegin(GL_QUADS);
 	{
+		glNormal3fv(faceNormals[4]);
 		glVertex3f(-1.9, -1.9, -0.001);
 		glVertex3f(-1.9, 1.9, -0.001);
 		glVertex3f(1.9, 1.9, -0.001);
 		glVertex3f(1.9, -1.9, -0.001);
+
 	}
 	glEnd();
 
