@@ -3,6 +3,16 @@
 // The view and projection matrices are provided, if you need
 // the normal matrix, you must construct it in the shader.
 
+
+uniform vec3 lightPos;
+uniform vec4 color;
+
+
+
+
+
+
+
 void main()
 {	
 	vec4 vertex = gl_ModelViewProjectionMatrix * gl_Vertex;  //use the uploaded matrix data
