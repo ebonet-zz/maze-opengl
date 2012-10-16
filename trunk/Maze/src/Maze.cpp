@@ -22,6 +22,9 @@ using namespace std;
 
 #define RESOLUTION 512
 
+#define POSITION_INDEX=0;
+#define NORMAL_INDEX=1;
+
 /* some useful constants */
 #define TRUE 1
 #define FALSE 0
@@ -50,8 +53,9 @@ int buttonDown[3] = { 0, 0 };
 int spin = FALSE;                    // are we spinning?
 int xsize, ysize;                  // window size
 
-GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, {
-		1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
+GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 },
+		{ 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 },
+		{ 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
 GLfloat GRAY[3] = { 0.5, 0.5, 0.5 };
 
 /* 2D point structure */
@@ -71,7 +75,8 @@ typedef struct {
 } Edge;
 
 struct Wall {
-	GLfloat vertices[8][3];
+	GLfloat vertices[8][2][3];
+
 
 	Wall(GLfloat * newVertices) {
 		memcpy(vertices, newVertices, 24 * sizeof(GLfloat));
@@ -181,14 +186,17 @@ Point2 *vertex = NULL;
 vector<Wall> walls;
 
 // Storage space for the various transformations we'll need
-float trackballTranslation1[16], trackballTranslation2[16], trackballRotation[16], trackballIncRotation[16];
+float trackballTranslation1[16], trackballTranslation2[16],
+		trackballRotation[16], trackballIncRotation[16];
 float mazeTranslation[16], mazeRotation[16];
 float currentAngle = 0;
 float currentPositionX = 0;
 float currentPositionY = 0;
 
-GLfloat verticesTrackBall[][3] = { { 0.0, 0.0, 0.0 }, { w, 0.0, 0.0 }, { w, h, 0.0 }, { 0.0, h, 0.0 }, { 0.0, 0.0,
-		WALL_HEIGHT }, { w, 0.0, WALL_HEIGHT }, { w, h, WALL_HEIGHT }, { 0.0, h, WALL_HEIGHT } };
+GLfloat verticesTrackBall[][3] =
+		{ { 0.0, 0.0, 0.0 }, { w, 0.0, 0.0 }, { w, h, 0.0 }, { 0.0, h, 0.0 }, {
+				0.0, 0.0, WALL_HEIGHT }, { w, 0.0, WALL_HEIGHT }, { w, h,
+				WALL_HEIGHT }, { 0.0, h, WALL_HEIGHT } };
 
 /* init_maze initializes a w1 by h1 maze.  all walls are initially
  included.  the edge and perimeter arrays, vertex array, and group
@@ -431,12 +439,16 @@ void setLookAt() {
 	if (displayMode != MAZE) {
 		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	} else {
-		cout << "Camera position: " << "(" << currentPositionX << "," << currentPositionY << ")" << endl;
-		cout << "Center position: " << "(" << currentPositionX + cos(currentAngle) << ","
+		cout << "Camera position: " << "(" << currentPositionX << ","
+				<< currentPositionY << ")" << endl;
+		cout << "Center position: " << "("
+				<< currentPositionX + cos(currentAngle) << ","
 				<< currentPositionY + sin(currentAngle) << ")" << endl;
 
-		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),
-				currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
+		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0,
+				currentPositionX + cos(currentAngle),
+				currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0,
+				0.0, 1.0);
 
 	}
 }
@@ -484,7 +496,8 @@ void drawDot() {
 	glTranslatef(currentPositionX, currentPositionY, 0.0);
 	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, 4.0, 4.0);
 
-	gluCylinder(gluNewQuadric(), WALL_WIDTH_DELTA, WALL_WIDTH_DELTA, 0.6, 4.0, 4.0);
+	gluCylinder(gluNewQuadric(), WALL_WIDTH_DELTA, WALL_WIDTH_DELTA, 0.6, 4.0,
+			4.0);
 
 	glTranslatef(0.0, 0.0, 0.6);
 	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, 4.0, 4.0);
@@ -496,8 +509,8 @@ void display() {
 	if (displayMode == TRACKBALL) {
 		resetAndApplyAllTransforms();
 	}
-	draw_maze();
 	drawFloor();
+	draw_maze();
 	if (displayMode == TRACKBALL) {
 		drawDot();
 	}
@@ -590,8 +603,10 @@ void update_rotate(int x1, int y1, int x2, int y2) {
 		// the amount of rotation is proportional to the magnitude of the
 		// difference between the vectors
 		t = sqrt(
-				(p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
-						+ (p1[2] - p2[2]) * (p1[2] - p2[2])) / (2.0 * TRACKBALLSIZE);
+				(p1[0] - p2[0]) * (p1[0] - p2[0])
+						+ (p1[1] - p2[1]) * (p1[1] - p2[1])
+						+ (p1[2] - p2[2]) * (p1[2] - p2[2]))
+				/ (2.0 * TRACKBALLSIZE);
 
 		if (t > 1.0) {
 			t = 1.0;
@@ -747,6 +762,9 @@ public:
 			glUseProgram(prog);
 			if (displayMode == TRACKBALL)
 				SpinCube2(0);
+
+			setShaderVariables();
+
 			display();
 			App->Display();
 		}
@@ -759,10 +777,34 @@ private:
 	GLint prog;
 	sf::Clock motionClock;
 	float timeSinceMotion;
+	float color[4];
+	float lightPos[3];
 
 	void updateView() {
 		setLookAt();
 		//glRotatef(currentAngle, 0, 0, 1);
+	}
+
+	void renderScene() {
+
+	}
+
+	void setShaderVariables() {
+
+		color[0] = 0.8;
+		color[1] = 0.8;
+		color[2] = 0.2;
+		color[4] = 1.0;
+		lightPos[0] = 3.0;
+		lightPos[1] = 1.0;
+		lightPos[2] = 1.0;
+
+		glUniform4f(glGetUniformLocation(prog, "color"), color[0], color[1],
+				color[2], color[3]);
+
+		glUniform3f(glGetUniformLocation(prog, "lightPos"),
+							lightPos[0], lightPos[1], lightPos[2]);
+
 	}
 
 	void handleHorizontalCameraRotate(int direction) {
@@ -788,13 +830,15 @@ private:
 			currentPositionY = -1.7;
 		}
 
-		cout << "(" << currentPositionX << "," << currentPositionY << ")" << endl;
+		cout << "(" << currentPositionX << "," << currentPositionY << ")"
+				<< endl;
 		setLookAt();
 	}
 
 	void handleEvents() {
 		const sf::Input& Input = App->GetInput();
-		bool shiftDown = Input.IsKeyDown(sf::Key::LShift) || Input.IsKeyDown(sf::Key::RShift);
+		bool shiftDown = Input.IsKeyDown(sf::Key::LShift)
+				|| Input.IsKeyDown(sf::Key::RShift);
 		sf::Event Event;
 		while (App->GetEvent(Event)) {
 			// Close window : exit
@@ -802,30 +846,36 @@ private:
 				App->Close();
 
 			// Escape key : exit
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Escape))
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Escape))
 				App->Close();
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Right)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Right)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraRotate(RIGHT);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Left)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Left)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraRotate(LEFT);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Up)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Up)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraMove(UP);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Down)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Down)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraMove(DOWN);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::M)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::M)) {
 				//resetModelViewMatrix();
 				glLoadIdentity();
 				displayMode = (displayMode + 1) % 2;
@@ -837,7 +887,8 @@ private:
 					lastPos[0] = Event.MouseButton.X;
 					lastPos[1] = Event.MouseButton.Y;
 
-					if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown) {
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& !shiftDown) {
 						buttonDown[0] = 1;
 						spin = FALSE;
 					}
@@ -845,18 +896,21 @@ private:
 						buttonDown[1] = 1;
 					if (Event.MouseButton.Button == sf::Mouse::Middle)
 						buttonDown[2] = 1;
-					if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& shiftDown)
 						buttonDown[2] = 1;
 				}
 
 				if (Event.Type == sf::Event::MouseButtonReleased) {
-					if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& !shiftDown)
 						buttonDown[0] = 0;
 					if (Event.MouseButton.Button == sf::Mouse::Right)
 						buttonDown[1] = 0;
 					if (Event.MouseButton.Button == sf::Mouse::Middle)
 						buttonDown[2] = 0;
-					if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& shiftDown)
 						buttonDown[2] = 0;
 
 					timeSinceMotion = motionClock.GetElapsedTime();
@@ -865,7 +919,8 @@ private:
 						spin = TRUE;
 				}
 
-				if (Event.Type == sf::Event::MouseMoved && (buttonDown[0] || buttonDown[1] || buttonDown[2])) {
+				if (Event.Type == sf::Event::MouseMoved
+						&& (buttonDown[0] || buttonDown[1] || buttonDown[2])) {
 					int x = Event.MouseMove.X;
 					int y = Event.MouseMove.Y;
 
@@ -932,8 +987,8 @@ private:
 				fprintf(logFile, "ARB fragment programs NOT supported. The program may not work correctly.\n");
 			}
 		}
-	}
-};
+		}
+	};
 
 int main(int argc, char **argv) {
 #ifdef __APPLE__
@@ -951,7 +1006,7 @@ int main(int argc, char **argv) {
 	if (argc < 3) {
 		w = 5;
 		h = 6;
-		fprintf(stderr, "The width and height can be specified as command line arguments. Defaulting to %i %i\n", w, h);
+		fprintf(stderr,"The width and height can be specified as command line arguments. Defaulting to %i %i\n", w, h);
 	}
 	else {
 		w = atoi(argv[1]);

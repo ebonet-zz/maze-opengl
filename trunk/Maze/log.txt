@@ -1,0 +1,5 @@
+GLEW init finished...
+OpenGL 2.0 is supported. Shaders should run correctly.
+ARB vertex programs supported.
+ARB fragment programs supported.
+Unable to open file 'Shaders/shader.vert' in mode 'rb'
