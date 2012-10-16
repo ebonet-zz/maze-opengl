@@ -11,7 +11,4 @@ Shader info log for:
 Shader program info log for:
   Shaders/shader.vert
   Shaders/shader.frag
-Vertex info
------------
-(0) : error C5145: must write to gl_Position
 
