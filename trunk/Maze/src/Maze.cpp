@@ -154,6 +154,7 @@ struct Wall {
 	void draw_mesh(int a, int b, int c, int d, int normal) {
 		glBegin(GL_POLYGON);
 		{
+			glNormal3fv(faceNormals[normal]);
 			glColor3fv(colors[a]);
 			glVertex3fv(vertices[a]);
 			glColor3fv(colors[b]);
@@ -162,7 +163,6 @@ struct Wall {
 			glVertex3fv(vertices[c]);
 			glColor3fv(colors[d]);
 			glVertex3fv(vertices[d]);
-			glNormal3fv(faceNormals[normal]);
 		}
 		glEnd();
 	}
@@ -435,7 +435,7 @@ void setLookAt() {
 	if (displayMode != MAZE) {
 		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	} else {
-		cout << "Camera position: " << "(" << currentPositionX << "," << currentPositionY << ")" << endl;
+
 		cout << "Center position: " << "(" << currentPositionX + cos(currentAngle) << ","
 				<< currentPositionY + sin(currentAngle) << ")" << endl;
 
@@ -473,12 +473,10 @@ void drawFloor() {
 	glColor3fv(GRAY);
 	glBegin(GL_QUADS);
 	{
-		glNormal3fv(faceNormals[4]);
 		glVertex3f(-1.9, -1.9, -0.001);
 		glVertex3f(-1.9, 1.9, -0.001);
 		glVertex3f(1.9, 1.9, -0.001);
 		glVertex3f(1.9, -1.9, -0.001);
-
 	}
 	glEnd();
 
@@ -768,15 +766,39 @@ private:
 	GLint prog;
 	sf::Clock motionClock;
 	float timeSinceMotion;
+	float color[4];
+	float lightPos[3];
 
 	void updateView() {
 		setLookAt();
 	}
 
+	void renderScene() {
+
+	}
+
 	void setShaderVariables() {
+
+		color[0] = 0.8;
+		color[1] = 0.8;
+		color[2] = 0.2;
+		color[4] = 1.0;
+		lightPos[0] = 0.0;
+		lightPos[1] = 0.0;
+		lightPos[2] = 0.0;
+
+		//glUniform4f(glGetUniformLocation(prog, "color"), color[0], color[1],
+		//		color[2], color[3]);
+
+		glUniform3f(glGetUniformLocation(prog, "lightPos"), lightPos[0], lightPos[1], lightPos[2]);
+
 		glUniform1f(glGetUniformLocation(prog, "elapsedTime"), motionClock.GetElapsedTime());
-		glUniform1f(glGetUniformLocation(prog, "cameraX"), currentPositionX);
-		glUniform1f(glGetUniformLocation(prog, "cameraY"), currentPositionY);
+		glUniform1f(glGetUniformLocation(prog, "elapsedTime"), motionClock.GetElapsedTime());
+
+		//cout << "LightPosition: (" << currentPositionX << ", " << currentPositionY << " )" <<endl;
+		glUniform1f(glGetUniformLocation(prog, "cameraX"), currentPositionX + cos(currentAngle));
+		glUniform1f(glGetUniformLocation(prog, "cameraY"), currentPositionY + sin(currentAngle));
+
 	}
 
 	void handleHorizontalCameraRotate(int direction) {
