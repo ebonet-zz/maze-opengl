@@ -75,7 +75,7 @@ typedef struct {
 } Edge;
 
 struct Wall {
-	GLfloat vertices[8][2][3];
+	GLfloat vertices[8][3];
 
 
 	Wall(GLfloat * newVertices) {
