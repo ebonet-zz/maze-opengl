@@ -4,11 +4,18 @@
 // the normal matrix, you must construct it in the shader.
 
 uniform float elapsedTime;
-varying vec4 color;
-varying vec3 normal;  //normal that will be interpolated for the fragment shader
 varying vec4 vertexPosition;
 uniform float currentPositionX;
 uniform float currentPositionY;
+
+uniform vec3 lightPos;
+
+varying vec4 color;
+varying vec3 normal;  //normal that will be interpolated for the fragment shader
+
+attribute vec3 distanceFromLight;
+
+
 
 void main()
 {	
