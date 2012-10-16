@@ -22,9 +22,6 @@ using namespace std;
 
 #define RESOLUTION 512
 
-#define POSITION_INDEX=0;
-#define NORMAL_INDEX=1;
-
 /* some useful constants */
 #define TRUE 1
 #define FALSE 0
@@ -804,6 +801,10 @@ private:
 
 		glUniform3f(glGetUniformLocation(prog, "lightPos"),
 							lightPos[0], lightPos[1], lightPos[2]);
+
+		glUniform1f(glGetUniformLocation(prog, "elapsedTime"), motionClock.GetElapsedTime());
+		glUniform1f(glGetUniformLocation(prog, "cameraX"), currentPositionX);
+		glUniform1f(glGetUniformLocation(prog, "cameraY"), currentPositionY);
 
 	}
 

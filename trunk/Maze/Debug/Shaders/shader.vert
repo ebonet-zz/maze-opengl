@@ -3,11 +3,19 @@
 // The view and projection matrices are provided, if you need
 // the normal matrix, you must construct it in the shader.
 
-attribute vec4 color;
+varying vec4 color;
+varying vec3 normal;  //normal that will be interpolated for the fragment shader
+varying vec4 vertexPosition;
+
+uniform float elapsedTime;
+uniform float currentPositionX;
+uniform float currentPositionY;
 
 void main()
 {	
 	color = gl_Color;
+	normal = gl_Normal;
+	
 	vec4 vertex = gl_ModelViewProjectionMatrix * gl_Vertex;  //use the uploaded matrix data
-	gl_Position = vertex;  //output the transformed vertex
+	gl_Position = vertexPosition = vertex;  //output the transformed vertex
 }
