@@ -1,14 +1,28 @@
-#include <stdio.h>
-#include <stdlib.h>
+/* maze generation program */
+
+//#include "glew/glew.h"
+#include "GL/glew.h"
 #include <SFML/Window.hpp>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include "ShaderManager.h"
+
 #include <cmath>
 #define _USE_MATH_DEFINES
 #include <iostream>
 #include <vector>
 using namespace std;
 
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#include <unistd.h>
+#include <string.h>
+#endif
+
 #define RESOLUTION 512
 
+/* some useful constants */
 #define TRUE 1
 #define FALSE 0
 
@@ -173,22 +187,8 @@ float currentAngle = 0;
 float currentPositionX = 0;
 float currentPositionY = 0;
 
-#if 0
-GLfloat verticesTrackBall[][3] = { {-1.0, -1.0, -1.0},
-	{	1.0, -1.0, -1.0},
-	{	1.0, 1.0, -1.0},
-	{	-1.0, 1.0, -1.0},
-	{	-1.0, -1.0, 1.0},
-	{	1.0, -1.0, 1.0},
-	{	1.0, 1.0, 1.0},
-	{	-1.0, 1.0, 1.0}};
-#else
-//GLfloat verticesTrackBall[][3] = { { 0.0, 0.0, 0.0 }, { 2.0, 0.0, 0.0 }, { 2.0, 2.0, 0.0 }, { 0.0, 2.0, 0.0 }, { 0.0,
-//		0.0, 2.0 }, { 2.0, 0.0, 2.0 }, { 2.0, 2.0, 2.0 }, { 0.0, 2.0, 2.0 } };
-
 GLfloat verticesTrackBall[][3] = { { 0.0, 0.0, 0.0 }, { w, 0.0, 0.0 }, { w, h, 0.0 }, { 0.0, h, 0.0 }, { 0.0, 0.0,
 		WALL_HEIGHT }, { w, 0.0, WALL_HEIGHT }, { w, h, WALL_HEIGHT }, { 0.0, h, WALL_HEIGHT } };
-#endif
 
 /* init_maze initializes a w1 by h1 maze.  all walls are initially
  included.  the edge and perimeter arrays, vertex array, and group
@@ -427,7 +427,6 @@ void resetModelViewMatrix() {
 }
 
 void setLookAt() {
-
 	glLoadIdentity();
 	if (displayMode != MAZE) {
 		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
@@ -439,10 +438,6 @@ void setLookAt() {
 		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),
 				currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
 
-		//gluLookAt(
-		//			currentPositionX, currentPositionY, WALL_HEIGHT / 2.0,
-		//		currentPositionX+cos(currentAngle), currentPositionY+sin(currentAngle), WALL_HEIGHT / 2.0,
-		//	0.0,0.0,1.0);
 	}
 }
 
@@ -638,12 +633,6 @@ void reshape(int w, int h) {
 
 	// default aspectRatio was 1.0
 	GLfloat newAspectRatio = ((float) xsize) / ((float) ysize);
-
-	//glMatrixMode(GL_PROJECTION);
-	//glLoadIdentity();
-	//gluPerspective(60.0, newAspectRatio, 0.1, 100);
-	//glLoadIdentity();
-
 }
 
 void gfxinit() {
@@ -729,7 +718,21 @@ void gfxinit() {
 class GLBox {
 public:
 	GLBox() {
-		App = new sf::Window(sf::VideoMode(RESOLUTION, RESOLUTION, 32), "Trackball");
+		App = new sf::Window(sf::VideoMode(RESOLUTION, RESOLUTION, 32), "Maze");
+
+		FILE * logFile;
+		logFile = fopen("log.txt", "wb");
+		if (logFile == NULL) {
+			printf("Unable to open log file. Exiting...\n");
+			exit(2);
+		}
+
+		__glewInit(logFile);
+		ShaderManager shaders = ShaderManager(logFile);
+
+		const char * vertPath = "Shaders/shader.vert";
+		const char * fragPath = "Shaders/shader.frag";
+		prog = shaders.buildShaderProgram(&vertPath, &fragPath, 1, 1);
 
 		gfxinit();
 
@@ -740,18 +743,20 @@ public:
 				sf::Sleep(sleepTime);
 
 			App->SetActive();
-
 			handleEvents();
+			glUseProgram(prog);
 			if (displayMode == TRACKBALL)
 				SpinCube2(0);
 			display();
-
 			App->Display();
 		}
+
+		fclose(logFile);
 	}
 
 private:
 	sf::Window *App;
+	GLint prog;
 	sf::Clock motionClock;
 	float timeSinceMotion;
 
@@ -883,14 +888,70 @@ private:
 			}
 		}
 	}
+
+	void __glewInit(FILE * logFile) const {
+		GLenum err = glewInit();
+		if (GLEW_OK != err) {
+			/* Problem: glewInit failed, something is seriously wrong. */
+			fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+			fprintf(logFile, "Error: %s\n", glewGetErrorString(err));
+		}
+		else
+		{
+			printf("GLEW init finished...\n");
+			fprintf(logFile, "GLEW init finished...\n");
+			if( __GLEW_VERSION_2_0 )
+			{
+				printf("OpenGL 2.0 is supported. Shaders should run correctly.\n");
+				fprintf(logFile, "OpenGL 2.0 is supported. Shaders should run correctly.\n");
+			}
+			else
+			{
+				printf("OpenGL 2.0 is NOT enabled. The program may not work correctly.\n");
+				fprintf(logFile, "OpenGL 2.0 is NOT enabled. The program may not work correctly.\n");
+			}
+
+			if( GLEW_ARB_vertex_program )
+			{
+				printf("ARB vertex programs supported.\n");
+				fprintf(logFile, "ARB vertex programs supported.\n");
+			}
+			else
+			{
+				printf("ARB vertex programs NOT supported. The program may not work correctly.\n");
+				fprintf(logFile, "ARB vertex programs NOT supported. The program may not work correctly.\n");
+			}
+			if( GLEW_ARB_fragment_program )
+			{
+				printf("ARB fragment programs supported.\n");
+				fprintf(logFile, "ARB fragment programs supported.\n");
+			}
+			else
+			{
+				printf("ARB fragment programs NOT supported. The program may not work correctly.\n");
+				fprintf(logFile, "ARB fragment programs NOT supported. The program may not work correctly.\n");
+			}
+		}
+	}
 };
 
 int main(int argc, char **argv) {
+#ifdef __APPLE__
+#define pathSize 5000
+	char path[pathSize];
+	uint32_t size = pathSize;
+	_NSGetExecutablePath(path, &size);
+	char *slashPos = strrchr(path, '/');
+	slashPos[0] = '\0';
+	chdir(path);
+	chdir("../../../");
+#endif
+
 	/* check that there are sufficient arguments */
 	if (argc < 3) {
-		w = 6;
+		w = 5;
 		h = 6;
-		fprintf(stderr,"The width and height can be specified as command line arguments. Defaulting to %i %i\n", w, h);
+		fprintf(stderr, "The width and height can be specified as command line arguments. Defaulting to %i %i\n", w, h);
 	}
 	else {
 		w = atoi(argv[1]);
