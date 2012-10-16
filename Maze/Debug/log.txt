@@ -1,0 +1,18 @@
+GLEW init finished...
+OpenGL 2.0 is supported. Shaders should run correctly.
+ARB vertex programs supported.
+ARB fragment programs supported.
+Shader info log for:
+  Shaders/shader.vert
+Vertex shader was successfully compiled to run on hardware.
+
+Shader info log for:
+  Shaders/shader.frag
+Fragment shader was successfully compiled to run on hardware.
+WARNING: 0:21: implicit cast from int to float
+Shader program info log for:
+  Shaders/shader.vert
+  Shaders/shader.frag
+Fragment shader(s) linked, vertex shader(s) linked. 
+WARNING: 0:21: implicit cast from int to float
+ 
