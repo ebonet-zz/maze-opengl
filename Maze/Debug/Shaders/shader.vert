@@ -10,18 +10,18 @@ uniform float currentPositionY;
 varying vec4 color;
 varying vec3 normal;  //normal that will be interpolated for the fragment shader
 varying vec4 vertexPosition;
-varying vec3 lightVector;
+varying vec4 lightVector;
 
-vec3 lightPos;
+vec4 lightPos;
 
 void main()
 {	
 	vec4 vertex = gl_ModelViewProjectionMatrix * gl_Vertex;  //use the uploaded matrix data
 	gl_Position = vertexPosition = vertex;  //output the transformed vertex
 	
-	lightPos = vec3(0.0, 0.2, 0.0);
+	lightPos = gl_ModelViewProjectionMatrix * vec4(0.0,0.0, 0.2,1.0);
 	
 	color = gl_Color;
-	normal = gl_Normal;
-	lightVector = lightPos - vertexPosition.xyz;
+	normal = gl_NormalMatrix * gl_Normal;
+	lightVector = lightPos - vertexPosition;
 }
