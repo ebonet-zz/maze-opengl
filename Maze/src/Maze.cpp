@@ -75,6 +75,7 @@ typedef struct {
 
 struct Wall {
 	GLfloat vertices[8][3];
+	bool isHorizontal;
 
 	Wall(GLfloat * newVertices) {
 		memcpy(vertices, newVertices, 24 * sizeof(GLfloat));
@@ -82,7 +83,8 @@ struct Wall {
 
 	Wall(Point2 * p1, Point2 * p2) {
 		if (p1->x == p2->x) {
-			// Horizontal line
+			isHorizontal = false;
+			// Vertical line
 
 			vertices[0][0] = p1->x - WALL_WIDTH_DELTA;
 			vertices[0][1] = p1->y - WALL_WIDTH_DELTA;
@@ -116,7 +118,10 @@ struct Wall {
 			vertices[7][1] = p2->y + WALL_WIDTH_DELTA;
 			vertices[7][2] = 0.0;
 		} else {
-			// Vertical line
+			// Horizontal line
+
+			isHorizontal = true;
+
 			vertices[0][0] = p1->x - WALL_WIDTH_DELTA;
 			vertices[0][1] = p1->y - WALL_WIDTH_DELTA;
 			vertices[0][2] = 0.0;
@@ -168,12 +173,22 @@ struct Wall {
 	}
 
 	void draw() {
-		draw_mesh(1, 0, 3, 2, 2);
-		draw_mesh(3, 7, 6, 2, 1);
-		draw_mesh(7, 3, 0, 4, 4);
-		draw_mesh(2, 6, 5, 1, 5);
-		draw_mesh(4, 5, 6, 7, 3);
-		draw_mesh(5, 4, 0, 1, 0);
+		if(isHorizontal){
+			draw_mesh(1, 0, 3, 2, 0);
+			draw_mesh(3, 7, 6, 2,  3);
+			draw_mesh(7, 3, 0, 4,  4);
+			draw_mesh(2, 6, 5, 1,  5);
+			draw_mesh(4, 5, 6, 7,  1);
+			draw_mesh(5, 4, 0, 1,  2);
+		}
+		else{
+			draw_mesh(1, 0, 3, 2, 2);
+			draw_mesh(3, 7, 6, 2,  1);
+			draw_mesh(7, 3, 0, 4,  4);
+			draw_mesh(2, 6, 5, 1,  5);
+			draw_mesh(4, 5, 6, 7,  3);
+			draw_mesh(5, 4, 0, 1,  0);
+		}
 	}
 
 };
@@ -435,7 +450,7 @@ void setLookAt() {
 	if (displayMode != MAZE) {
 		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	} else {
-
+		cout << "Camera position: " << "(" << currentPositionX << "," << currentPositionY << ")" << endl;
 		cout << "Center position: " << "(" << currentPositionX + cos(currentAngle) << ","
 				<< currentPositionY + sin(currentAngle) << ")" << endl;
 
@@ -473,10 +488,12 @@ void drawFloor() {
 	glColor3fv(GRAY);
 	glBegin(GL_QUADS);
 	{
+		glNormal3fv(faceNormals[5]);
 		glVertex3f(-1.9, -1.9, -0.001);
 		glVertex3f(-1.9, 1.9, -0.001);
 		glVertex3f(1.9, 1.9, -0.001);
 		glVertex3f(1.9, -1.9, -0.001);
+
 	}
 	glEnd();
 
@@ -766,39 +783,15 @@ private:
 	GLint prog;
 	sf::Clock motionClock;
 	float timeSinceMotion;
-	float color[4];
-	float lightPos[3];
 
 	void updateView() {
 		setLookAt();
 	}
 
-	void renderScene() {
-
-	}
-
 	void setShaderVariables() {
-
-		color[0] = 0.8;
-		color[1] = 0.8;
-		color[2] = 0.2;
-		color[4] = 1.0;
-		lightPos[0] = 0.0;
-		lightPos[1] = 0.0;
-		lightPos[2] = 0.0;
-
-		//glUniform4f(glGetUniformLocation(prog, "color"), color[0], color[1],
-		//		color[2], color[3]);
-
-		glUniform3f(glGetUniformLocation(prog, "lightPos"), lightPos[0], lightPos[1], lightPos[2]);
-
 		glUniform1f(glGetUniformLocation(prog, "elapsedTime"), motionClock.GetElapsedTime());
-		glUniform1f(glGetUniformLocation(prog, "elapsedTime"), motionClock.GetElapsedTime());
-
-		//cout << "LightPosition: (" << currentPositionX << ", " << currentPositionY << " )" <<endl;
-		glUniform1f(glGetUniformLocation(prog, "cameraX"), currentPositionX + cos(currentAngle));
-		glUniform1f(glGetUniformLocation(prog, "cameraY"), currentPositionY + sin(currentAngle));
-
+		glUniform1f(glGetUniformLocation(prog, "cameraX"), currentPositionX);
+		glUniform1f(glGetUniformLocation(prog, "cameraY"), currentPositionY);
 	}
 
 	void handleHorizontalCameraRotate(int direction) {
