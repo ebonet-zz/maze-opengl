@@ -17,8 +17,9 @@ void main()
 	if(scale < 0.0) {
 		scale = 0.0;
 	} else {
-		//gl_FragColor = colorAttribute * (1.0*scale+0.2) / (distance/1.7 / 2) ;
+		scale -= distances/2;
+		gl_FragColor = vec4(colorAttribute * (1.3*scale+0.2),1.0);
 	}
 	
-	gl_FragColor = vec4(colorAttribute * (1.3*scale+0.2),1.0) ;
+	//gl_FragColor = vec4(colorAttribute * (1.3*scale+0.2),1.0) ;
 }
