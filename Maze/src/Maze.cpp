@@ -61,6 +61,7 @@ const char* NORMAL_ATTRIBUTE_NAME = "meshNormal";
 GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, {
 		1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
 GLfloat GRAY[3] = { 0.5, 0.5, 0.5 };
+GLfloat YELLOW[3] = { 1.0, 1.0, 0.3 };
 
 GLfloat faceNormals[][3] = { { 1.0, 0.0, 0.0 }, { -1.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, -1.0, 0.0 }, { 0.0, 0.0,
 		1.0 }, { 0.0, 0.0, -1.0 } };
@@ -166,10 +167,6 @@ struct Wall {
 	}
 
 	void draw_vertex(float color[3], float coordinates[3]) {
-		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), normal);
-
-
-		//glColor3fv(color);
 		glVertexAttrib3fv(loc, color);
 		glVertex3fv(coordinates);
 	}
@@ -502,17 +499,9 @@ void drawFloor() {
 	glBegin(GL_QUADS);
 	{
 		glNormal3fv(faceNormals[5]);
-
-		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), faceNormals[5]);
 		glVertex3f(-1.9, -1.9, -0.001);
-
-		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), faceNormals[5]);
 		glVertex3f(-1.9, 1.9, -0.001);
-
-		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), faceNormals[5]);
 		glVertex3f(1.9, 1.9, -0.001);
-
-		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), faceNormals[5]);
 		glVertex3f(1.9, -1.9, -0.001);
 
 	}
@@ -521,14 +510,17 @@ void drawFloor() {
 }
 
 void drawDot() {
-	glColor3f(1.0, 1.0, 0.0);
+
+	glVertexAttrib3fv(loc, YELLOW);
 	glPushMatrix();
 	glTranslatef(currentPositionX, currentPositionY, 0.0);
+	glNormal3fv(faceNormals[4]);
 	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, 4.0, 4.0);
 
 	gluCylinder(gluNewQuadric(), WALL_WIDTH_DELTA, WALL_WIDTH_DELTA, 0.6, 4.0, 4.0);
 
 	glTranslatef(0.0, 0.0, 0.6);
+	glNormal3fv(faceNormals[5]);
 	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, 4.0, 4.0);
 	glPopMatrix();
 }
