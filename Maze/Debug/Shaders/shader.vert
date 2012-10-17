@@ -8,6 +8,7 @@ uniform float elapsedTime;
 varying vec3 lightVector;
 varying vec3 normal;
 varying vec4 color;
+varying float distance;
 
 vec4 lightPos;
 
@@ -29,6 +30,8 @@ void main()
 	lightPos = gl_ModelViewProjectionMatrix * vec4(0.8*cos(elapsedTime*0.8),0.8*sin(elapsedTime*0.8)/2,0.4,1.0);
 	
 	lightVector = vertex.xyz - lightPos.xyz;
+	
+	distance = distance(vertex.xyz,lightPos.xyz);
 	
 	gl_Position = vertex;  //output the transformed vertex
 }
