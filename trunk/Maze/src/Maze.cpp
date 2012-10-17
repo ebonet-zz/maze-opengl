@@ -514,13 +514,13 @@ void drawDot() {
 	glVertexAttrib3fv(loc, YELLOW);
 	glPushMatrix();
 	glTranslatef(currentPositionX, currentPositionY, 0.0);
-	glNormal3fv(faceNormals[4]);
+	//glNormal3fv(faceNormals[4]);
 	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, 4.0, 4.0);
 
 	gluCylinder(gluNewQuadric(), WALL_WIDTH_DELTA, WALL_WIDTH_DELTA, 0.6, 4.0, 4.0);
 
 	glTranslatef(0.0, 0.0, 0.6);
-	glNormal3fv(faceNormals[5]);
+	//glNormal3fv(faceNormals[5]);
 	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, 4.0, 4.0);
 	glPopMatrix();
 }
