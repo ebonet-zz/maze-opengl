@@ -59,8 +59,8 @@ GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 },
 		1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
 GLfloat GRAY[3] = { 0.5, 0.5, 0.5 };
 
-GLfloat faceNormals[][3] = { { -1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, -1.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, 0.0,
-		-1.0 }, { 0.0, 0.0, 1.0 } };
+GLfloat faceNormals[][3] = { { 1.0, 0.0, 0.0 }, { -1.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, -1.0, 0.0 }, { 0.0, 0.0,
+		1.0 }, { 0.0, 0.0, -1.0 } };
 
 /* 2D point structure */
 typedef struct {
@@ -161,21 +161,24 @@ struct Wall {
 		}
 	}
 
-	void draw_vertex(float* color, float* coordinates, float* normal) {
+	void draw_vertex(float color[3], float coordinates[3]) {
 		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), normal);
 
-		glNormal3fv(normal);
-		glColor3fv(color);
+
+		//glColor3fv(color);
+		GLint loc = glGetAttribLocation(prog, "attr_color");
+		glVertexAttrib3fv(loc, color);
 		glVertex3fv(coordinates);
 	}
 
 	void draw_mesh(int a, int b, int c, int d, int normal) {
 		glBegin(GL_POLYGON);
 		{
-			draw_vertex(colors[a], vertices[a], faceNormals[normal]);
-			draw_vertex(colors[b], vertices[b], faceNormals[normal]);
-			draw_vertex(colors[c], vertices[c], faceNormals[normal]);
-			draw_vertex(colors[d], vertices[d], faceNormals[normal]);
+			glNormal3fv( faceNormals[normal]);
+			draw_vertex(colors[a], vertices[a]);
+			draw_vertex(colors[b], vertices[b]);
+			draw_vertex(colors[c], vertices[c]);
+			draw_vertex(colors[d], vertices[d]);
 		}
 		glEnd();
 	}
@@ -457,14 +460,9 @@ void setLookAt() {
 	if (displayMode != MAZE) {
 		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	} else {
-		cout << "Camera position: " << "(" << currentPositionX << "," << currentPositionY << ")" << endl;
-		cout << "Center position: " << "(" << currentPositionX + cos(currentAngle) << ","
-				<< currentPositionY + sin(currentAngle) << ")" << endl;
 
 		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),
 				currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
-		//gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),
-		//			currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
 
 	}
 }
@@ -494,7 +492,10 @@ void incrementRotation() {
 }
 
 void drawFloor() {
-	glColor3fv(GRAY);
+
+
+	//glColor3fv(GRAY);
+	glVertexAttrib3fv(glGetAttribLocation(prog, "attr_color"), GRAY);
 	glBegin(GL_QUADS);
 	{
 		glNormal3fv(faceNormals[5]);

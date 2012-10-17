@@ -7,34 +7,26 @@ uniform float elapsedTime;
 
 varying vec3 lightVector;
 varying vec3 normal;
-varying vec4 color;
-varying float distance;
+varying float distances;
+varying vec3 colorAttribute;
 
-attribute vec3 meshNormal;
+attribute vec3 attr_color;
+
 
 vec4 lightPos;
 
 void main()
 {	
-	color = gl_Color;
-	//normal = (gl_ModelViewProjectionMatrix * vec4(gl_Normal,1)).xyz;
+	colorAttribute = attr_color;
+	
 	normal = gl_Normal;
-	vec4 vertex = gl_ModelViewProjectionMatrix * gl_Vertex;  //use the uploaded matrix data
+	vec4 vertex = gl_Vertex;  //use the uploaded matrix data
 	
-	 //Debug normals
-	//if(normal[0]<0) color = vec4(0.0,0.0,1.0,1.0);
-	//if(normal[0]>0) color = vec4(1.0,0.0,0.0,1.0);
-	//if(normal[1]<0) color = vec4(0.0,1.0,0.0,1.0);
-	//if(normal[1]>0) color = vec4(0.0,1.0,1.0,1.0);
-	//if(normal[2]<0) color = vec4(1.0,0.0,1.0,1.0);
-	//if(normal[2]>0) color = vec4(1.0,1.0,0.0,1.0);
-	
-	
-	lightPos = gl_ModelViewProjectionMatrix * vec4(0.8*cos(elapsedTime*0.8),0.8*sin(elapsedTime*0.8)/2,0.4,1.0);
+	lightPos = vec4(1.1*cos(elapsedTime*0.8),1.1*sin(elapsedTime*0.8),1.0,1.0); // Light Position
 	
 	lightVector = vertex.xyz - lightPos.xyz;
 	
-	distance = distance(vertex.xyz,lightPos.xyz);
+	distances = distance(vertex.xyz,lightPos.xyz);
 	
-	gl_Position = vertex;  //output the transformed vertex
+	gl_Position = gl_ModelViewProjectionMatrix * vertex;  //output the transformed vertex
 }
