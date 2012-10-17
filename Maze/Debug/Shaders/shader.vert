@@ -10,11 +10,14 @@ varying vec3 normal;
 varying vec4 color;
 varying float distance;
 
+attribute vec3 meshNormal;
+
 vec4 lightPos;
 
 void main()
 {	
 	color = gl_Color;
+	//normal = (gl_ModelViewProjectionMatrix * vec4(gl_Normal,1)).xyz;
 	normal = gl_Normal;
 	vec4 vertex = gl_ModelViewProjectionMatrix * gl_Vertex;  //use the uploaded matrix data
 	
