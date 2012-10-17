@@ -784,6 +784,7 @@ private:
 	sf::Window *App;
 	GLint prog;
 	sf::Clock motionClock;
+	sf::Clock motionClock2;
 	float timeSinceMotion;
 
 	void updateView() {
@@ -791,7 +792,7 @@ private:
 	}
 
 	void setShaderVariables() {
-		glUniform1f(glGetUniformLocation(prog, "elapsedTime"), motionClock.GetElapsedTime());
+		glUniform1f(glGetUniformLocation(prog, "elapsedTime"), motionClock2.GetElapsedTime());
 		glUniform1f(glGetUniformLocation(prog, "cameraX"), currentPositionX);
 		glUniform1f(glGetUniformLocation(prog, "cameraY"), currentPositionY);
 	}
