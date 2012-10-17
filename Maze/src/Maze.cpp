@@ -51,6 +51,9 @@ int buttonDown[3] = { 0, 0 };
 int spin = FALSE;                    // are we spinning?
 int xsize, ysize;                  // window size
 
+
+GLint loc;
+
 //Shader program
 GLint prog;
 const char* NORMAL_ATTRIBUTE_NAME = "meshNormal";
@@ -84,6 +87,7 @@ struct Wall {
 
 	Wall(GLfloat * newVertices) {
 		memcpy(vertices, newVertices, 24 * sizeof(GLfloat));
+		isHorizontal = false;
 	}
 
 	Wall(Point2 * p1, Point2 * p2) {
@@ -166,7 +170,6 @@ struct Wall {
 
 
 		//glColor3fv(color);
-		GLint loc = glGetAttribLocation(prog, "attr_color");
 		glVertexAttrib3fv(loc, color);
 		glVertex3fv(coordinates);
 	}
@@ -495,7 +498,7 @@ void drawFloor() {
 
 
 	//glColor3fv(GRAY);
-	glVertexAttrib3fv(glGetAttribLocation(prog, "attr_color"), GRAY);
+	glVertexAttrib3fv(loc, GRAY);
 	glBegin(GL_QUADS);
 	{
 		glNormal3fv(faceNormals[5]);
@@ -772,7 +775,7 @@ public:
 		const char * vertPath = "Shaders/shader.vert";
 		const char * fragPath = "Shaders/shader.frag";
 		prog = shaders.buildShaderProgram(&vertPath, &fragPath, 1, 1);
-
+		loc = glGetAttribLocation(prog, "attr_color");
 		gfxinit();
 
 		while (App->IsOpened()) {
