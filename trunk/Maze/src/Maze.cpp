@@ -12,6 +12,7 @@
 #define _USE_MATH_DEFINES
 #include <iostream>
 #include <vector>
+
 using namespace std;
 
 #ifdef __APPLE__
@@ -49,6 +50,10 @@ int lastPos[2] = { 0, 0 };
 int buttonDown[3] = { 0, 0 };
 int spin = FALSE;                    // are we spinning?
 int xsize, ysize;                  // window size
+
+//Shader program
+GLint prog;
+const char* NORMAL_ATTRIBUTE_NAME = "meshNormal";
 
 GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, {
 		1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
@@ -156,38 +161,40 @@ struct Wall {
 		}
 	}
 
+	void draw_vertex(float* color, float* coordinates, float* normal) {
+		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), normal);
+
+		glNormal3fv(normal);
+		glColor3fv(color);
+		glVertex3fv(coordinates);
+	}
+
 	void draw_mesh(int a, int b, int c, int d, int normal) {
 		glBegin(GL_POLYGON);
 		{
-			glNormal3fv(faceNormals[normal]);
-			glColor3fv(colors[a]);
-			glVertex3fv(vertices[a]);
-			glColor3fv(colors[b]);
-			glVertex3fv(vertices[b]);
-			glColor3fv(colors[c]);
-			glVertex3fv(vertices[c]);
-			glColor3fv(colors[d]);
-			glVertex3fv(vertices[d]);
+			draw_vertex(colors[a], vertices[a], faceNormals[normal]);
+			draw_vertex(colors[b], vertices[b], faceNormals[normal]);
+			draw_vertex(colors[c], vertices[c], faceNormals[normal]);
+			draw_vertex(colors[d], vertices[d], faceNormals[normal]);
 		}
 		glEnd();
 	}
 
 	void draw() {
-		if(isHorizontal){
+		if (isHorizontal) {
 			draw_mesh(1, 0, 3, 2, 0);
-			draw_mesh(3, 7, 6, 2,  3);
-			draw_mesh(7, 3, 0, 4,  4);
-			draw_mesh(2, 6, 5, 1,  5);
-			draw_mesh(4, 5, 6, 7,  1);
-			draw_mesh(5, 4, 0, 1,  2);
-		}
-		else{
+			draw_mesh(3, 7, 6, 2, 3);
+			draw_mesh(7, 3, 0, 4, 4);
+			draw_mesh(2, 6, 5, 1, 5);
+			draw_mesh(4, 5, 6, 7, 1);
+			draw_mesh(5, 4, 0, 1, 2);
+		} else {
 			draw_mesh(1, 0, 3, 2, 2);
-			draw_mesh(3, 7, 6, 2,  1);
-			draw_mesh(7, 3, 0, 4,  4);
-			draw_mesh(2, 6, 5, 1,  5);
-			draw_mesh(4, 5, 6, 7,  3);
-			draw_mesh(5, 4, 0, 1,  0);
+			draw_mesh(3, 7, 6, 2, 1);
+			draw_mesh(7, 3, 0, 4, 4);
+			draw_mesh(2, 6, 5, 1, 5);
+			draw_mesh(4, 5, 6, 7, 3);
+			draw_mesh(5, 4, 0, 1, 0);
 		}
 	}
 
@@ -457,7 +464,7 @@ void setLookAt() {
 		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),
 				currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
 		//gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),
-			//			currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
+		//			currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
 
 	}
 }
@@ -491,9 +498,17 @@ void drawFloor() {
 	glBegin(GL_QUADS);
 	{
 		glNormal3fv(faceNormals[5]);
+
+		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), faceNormals[5]);
 		glVertex3f(-1.9, -1.9, -0.001);
+
+		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), faceNormals[5]);
 		glVertex3f(-1.9, 1.9, -0.001);
+
+		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), faceNormals[5]);
 		glVertex3f(1.9, 1.9, -0.001);
+
+		//glVertexAttrib3fv(glGetAttribLocation(prog, NORMAL_ATTRIBUTE_NAME), faceNormals[5]);
 		glVertex3f(1.9, -1.9, -0.001);
 
 	}
@@ -767,7 +782,10 @@ public:
 
 			App->SetActive();
 			handleEvents();
+
 			glUseProgram(prog);
+
+
 			if (displayMode == TRACKBALL)
 				SpinCube2(0);
 
@@ -782,7 +800,6 @@ public:
 
 private:
 	sf::Window *App;
-	GLint prog;
 	sf::Clock motionClock;
 	sf::Clock motionClock2;
 	float timeSinceMotion;
