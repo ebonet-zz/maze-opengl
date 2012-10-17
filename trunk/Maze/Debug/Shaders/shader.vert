@@ -22,7 +22,7 @@ void main()
 	normal = gl_Normal;
 	vec4 vertex = gl_Vertex;  //use the uploaded matrix data
 	
-	lightPos = vec4(1.1*cos(elapsedTime*0.8),1.1*sin(elapsedTime*0.8),1.0,1.0); // Light Position
+	lightPos = vec4(1.1*cos(elapsedTime*0.8),1.1*sin(elapsedTime*0.8),cos(elapsedTime*0.8)*sin(elapsedTime*0.8),1.0); // Light Position
 	
 	lightVector = vertex.xyz - lightPos.xyz;
 	
