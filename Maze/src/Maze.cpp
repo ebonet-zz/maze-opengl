@@ -456,6 +456,8 @@ void setLookAt() {
 
 		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),
 				currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
+		//gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),
+			//			currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
 
 	}
 }
