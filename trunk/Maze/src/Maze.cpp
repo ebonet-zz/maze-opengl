@@ -216,17 +216,17 @@ struct Bound {
 
 		// is vertical
 		if (p1->x == p2->x) {
-			xMin = p1->x - 2 * WALL_WIDTH_DELTA;
-			xMax = p1->x + 2 * WALL_WIDTH_DELTA;
-			yMax = p2->y + 2 * WALL_WIDTH_DELTA;
-			yMin = p1->y - 2 * WALL_WIDTH_DELTA;
+			xMin = p1->x - 3 * WALL_WIDTH_DELTA;
+			xMax = p1->x + 3 * WALL_WIDTH_DELTA;
+			yMax = p2->y + 3 * WALL_WIDTH_DELTA;
+			yMin = p1->y - 3 * WALL_WIDTH_DELTA;
 		}
 		// is horizontal
 		else {
-			xMin = p1->x - 2 * WALL_WIDTH_DELTA;
-			xMax = p2->x + 2 * WALL_WIDTH_DELTA;
-			yMin = p1->y - 2 * WALL_WIDTH_DELTA;
-			yMax = p1->y + 2 * WALL_WIDTH_DELTA;
+			xMin = p1->x - 3 * WALL_WIDTH_DELTA;
+			xMax = p2->x + 3 * WALL_WIDTH_DELTA;
+			yMin = p1->y - 3 * WALL_WIDTH_DELTA;
+			yMax = p1->y + 3 * WALL_WIDTH_DELTA;
 		}
 
 	}
@@ -940,6 +940,14 @@ private:
 		if (!isWall(newX, newY)) {
 			currentPositionX = newX;
 			currentPositionY = newY;
+		} else {
+			if (!isWall(newX, currentPositionY)) {
+				currentPositionX = newX;
+			} else {
+				if (!isWall(currentPositionX, newY)) {
+					currentPositionY = newY;
+				}
+			}
 		}
 
 		cout << "(" << currentPositionX << "," << currentPositionY << ")" << endl;
