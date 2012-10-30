@@ -521,7 +521,7 @@ void resetModelViewMatrix() {
 void setLookAt() {
 	glLoadIdentity();
 	if (displayMode != MAZE) {
-		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+		gluLookAt(0.0, 0.0, 8.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	} else {
 
 		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),

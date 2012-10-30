@@ -17,7 +17,7 @@ void main()
 	if(scale < 0.0) {
 		scale = 0.0;
 	} else {
-		// scale -= distances/2;
+		scale -= distances/2;
 		gl_FragColor = vec4(colorAttribute * (1.3*scale+0.2),1.0);
 	}
 	
