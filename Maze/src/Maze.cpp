@@ -571,7 +571,7 @@ void drawFloor() {
 
 }
 
-void drawDot() {
+void drawPerson() {
 
 	glVertexAttrib3fv(loc, YELLOW);
 	glPushMatrix();
@@ -623,7 +623,7 @@ void display(GLint prog) {
 	drawFloor();
 	draw_maze();
 	if (displayMode == TRACKBALL) {
-		drawDot();
+		drawPerson();
 	}
 	glFlush();
 }
@@ -914,10 +914,6 @@ private:
 	GLint progMaze;
 	GLuint textureTarget;
 
-	void updateView() {
-		setLookAt();
-	}
-
 	void handleHorizontalCameraRotate(int direction) {
 		currentAngle -= 2 * direction * 0.05;
 		setLookAt();
@@ -1049,14 +1045,18 @@ private:
 	}
 
 	void setShaderVariables(GLuint shaderProg) {
-		glUniform1f(glGetUniformLocation(shaderProg, "elapsedTime"), motionClock2.GetElapsedTime());
-		glUniform1f(glGetUniformLocation(shaderProg, "cameraX"), currentPositionX);
-		glUniform1f(glGetUniformLocation(shaderProg, "cameraY"), currentPositionY);
-
 		if (__GLEW_VERSION_2_0) {
+			glUniform1f(glGetUniformLocation(shaderProg, "elapsedTime"), motionClock2.GetElapsedTime());
+			glUniform1f(glGetUniformLocation(shaderProg, "cameraX"), currentPositionX);
+			glUniform1f(glGetUniformLocation(shaderProg, "cameraY"), currentPositionY);
+
 			glUniform1f(glGetUniformLocation(shaderProg, "elapsedTime"), Clock.GetElapsedTime());
 			glUniform2f(glGetUniformLocation(shaderProg, "resolution"), xsize, ysize);
 		} else {
+			glUniform1fARB(glGetUniformLocationARB(shaderProg, "elapsedTime"), motionClock2.GetElapsedTime());
+			glUniform1fARB(glGetUniformLocationARB(shaderProg, "cameraX"), currentPositionX);
+			glUniform1fARB(glGetUniformLocationARB(shaderProg, "cameraY"), currentPositionY);
+
 			glUniform1fARB(glGetUniformLocationARB(shaderProg, "elapsedTime"), Clock.GetElapsedTime());
 			glUniform2fARB(glGetUniformLocationARB(shaderProg, "resolution"), xsize, ysize);
 		}
