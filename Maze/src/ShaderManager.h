@@ -1,6 +1,7 @@
 #ifndef __SHADERMANAGER_
 #define __SHADERMANAGER_
 
+#include "GL/glew.h"
 #include <SFML/Window.hpp>
 #include <stdio.h>
 
