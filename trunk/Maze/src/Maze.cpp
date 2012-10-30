@@ -587,11 +587,34 @@ void drawDot() {
 	glPopMatrix();
 }
 
+void configure() {
+	glEnable(GL_DEPTH_TEST);
+
+	// initialize the projection stack
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	if (displayMode == MAZE) {
+		gluPerspective(60, 1.0, 0.1, 100);
+	} else {
+		gluPerspective(30, 1.0, 0.1, 100);
+	}
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glViewport(0, 0, xsize, ysize);
+
+	setLookAt();
+}
+
 void display(GLint prog) {
 	loc = glGetAttribLocation(prog, "attr_color");
 	tLoc = glGetAttribLocation(prog, "localAttr");
 
+	configure();
+
 	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_CULL_FACE);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	if (displayMode == TRACKBALL) {
@@ -749,44 +772,48 @@ void reshape(int w, int h) {
 }
 
 void gfxinit() {
+	int i;
+	float x = 0, y = 0, z = 0;
+	glEnable(GL_DEPTH_TEST);
+	// initialize the projection stack
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
 	if (displayMode == MAZE) {
-		int i;
-		float x = 0, y = 0, z = 0;
-
-		glEnable(GL_DEPTH_TEST);
-
-		// initialize the projection stack
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
 		gluPerspective(60, 1.0, 0.1, 100);
+	} else {
+		gluPerspective(30, 1.0, 0.1, 100);
+	}
+	// initialize the modelview stack
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation2);
+	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballRotation);
+	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballIncRotation);
+	for (i = 0; i < 8; i++) {
+		x += verticesTrackBall[i][0];
+		y += verticesTrackBall[i][1];
+		z += verticesTrackBall[i][2];
+	}
+	x /= 8;
+	y /= 8;
+	z /= 8;
+	glTranslatef(-x, -y, -z);
+	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation1);
+	glLoadIdentity();
 
-		// initialize the modelview stack
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation2);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballRotation);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballIncRotation);
-		for (i = 0; i < 8; i++) {
-			x += verticesTrackBall[i][0];
-			y += verticesTrackBall[i][1];
-			z += verticesTrackBall[i][2];
-		}
-		x /= 8;
-		y /= 8;
-		z /= 8;
-		glTranslatef(-x, -y, -z);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation1);
-		glLoadIdentity();
+	if (displayMode != MAZE) {
+		glMultMatrixf(trackballTranslation1);
+	}
 
-		//glMultMatrixf(trackballTranslation1);
+	glViewport(0, 0, RESOLUTION, RESOLUTION);
+	xsize = RESOLUTION;
+	ysize = RESOLUTION;
 
-		glViewport(0, 0, RESOLUTION, RESOLUTION);
-		xsize = RESOLUTION;
-		ysize = RESOLUTION;
+	setLookAt();
+	build_maze();
 
-		setLookAt();
-		build_maze();
-
+	if (displayMode == MAZE) {
 		currentPositionX = -1.6 + rand() % 4;
 		currentPositionY = -1.3 + rand() % 3;
 
@@ -794,43 +821,6 @@ void gfxinit() {
 			currentPositionX = -1.6 + rand() % 4;
 			currentPositionY = -1.3 + rand() % 3;
 		}
-
-	} else {
-		int i;
-		float x = 0, y = 0, z = 0;
-
-		glEnable(GL_DEPTH_TEST);
-
-		// initialize the projection stack
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		gluPerspective(30, 1.0, 0.1, 100);
-
-		// initialize the modelview stack
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation2);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballRotation);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballIncRotation);
-		for (i = 0; i < 8; i++) {
-			x += verticesTrackBall[i][0];
-			y += verticesTrackBall[i][1];
-			z += verticesTrackBall[i][2];
-		}
-		x /= 8;
-		y /= 8;
-		z /= 8;
-		glTranslatef(-x, -y, -z);
-		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation1);
-		glLoadIdentity();
-		setLookAt();
-		glMultMatrixf(trackballTranslation1);
-
-		glViewport(0, 0, RESOLUTION, RESOLUTION);
-		xsize = RESOLUTION;
-		ysize = RESOLUTION;
-
-		build_maze();
 	}
 }
 
@@ -907,7 +897,7 @@ public:
 			renderModel(progMaze);
 
 			//render texture pass
-			//renderTexture(progTex);
+			renderTexture(progTex);
 
 			App->Display();
 		}
@@ -1166,17 +1156,17 @@ private:
 			{
 				printf("OpenGL 2.0 is NOT enabled. The program may not work correctly.\n");
 				if(logFile!=NULL) fprintf(logFile,"OpenGL 2.0 is NOT enabled. The program may not work correctly.\n");
-	            }
+		}
 
-	            if( GLEW_ARB_vertex_program )
-	            {
-	                printf("ARB vertex programs supported.\n");
-	                if(logFile!=NULL) fprintf(logFile, "ARB vertex programs supported.\n");
-	            }
-	            else
-	            {
-	                printf("ARB vertex programs NOT supported. The program may not work correctly.\n");
-	                if(logFile!=NULL) fprintf(logFile, "ARB vertex programs NOT supported. The program may not work correctly.\n");
+		if( GLEW_ARB_vertex_program )
+		{
+			printf("ARB vertex programs supported.\n");
+			if(logFile!=NULL) fprintf(logFile, "ARB vertex programs supported.\n");
+		}
+		else
+		{
+			printf("ARB vertex programs NOT supported. The program may not work correctly.\n");
+			if(logFile!=NULL) fprintf(logFile,"ARB vertex programs NOT supported. The program may not work correctly.\n");
 	            }
 	            if( GLEW_ARB_fragment_program )
 	            {
