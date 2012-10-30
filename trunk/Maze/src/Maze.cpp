@@ -52,19 +52,21 @@ int spin = FALSE;                    // are we spinning?
 int xsize, ysize;                  // window size
 
 GLint loc;
+GLint tLoc;
+float mazeWidth = 4;
+float wd = 1.0 / mazeWidth;
+float hw = wd * 2.0;
 
 //Shader program
-GLint prog;
 const char* NORMAL_ATTRIBUTE_NAME = "meshNormal";
 
-GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 },
-		{ 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 },
-		{ 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
+GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, {
+		1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
 GLfloat GRAY[3] = { 0.5, 0.5, 0.5 };
 GLfloat YELLOW[3] = { 1.0, 1.0, 0.3 };
 
-GLfloat faceNormals[][3] = { { 1.0, 0.0, 0.0 }, { -1.0, 0.0, 0.0 }, { 0.0, 1.0,
-		0.0 }, { 0.0, -1.0, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0, -1.0 } };
+GLfloat faceNormals[][3] = { { 1.0, 0.0, 0.0 }, { -1.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, -1.0, 0.0 }, { 0.0, 0.0,
+		1.0 }, { 0.0, 0.0, -1.0 } };
 
 /* 2D point structure */
 typedef struct {
@@ -168,6 +170,10 @@ struct Wall {
 
 	void draw_vertex(float color[3], float coordinates[3]) {
 		glVertexAttrib3fv(loc, color);
+		Point2 attribData;
+		attribData.x = coordinates[0] * wd + hw;
+		attribData.y = coordinates[1] * wd + hw;
+		glVertexAttrib2fv(tLoc, &attribData.x);
 		glVertex3fv(coordinates);
 	}
 
@@ -239,17 +245,14 @@ vector<Wall> walls;
 vector<Bound> bounds;
 
 // Storage space for the various transformations we'll need
-float trackballTranslation1[16], trackballTranslation2[16],
-		trackballRotation[16], trackballIncRotation[16];
+float trackballTranslation1[16], trackballTranslation2[16], trackballRotation[16], trackballIncRotation[16];
 float mazeTranslation[16], mazeRotation[16];
 float currentAngle = 0;
 float currentPositionX = 0;
 float currentPositionY = 0;
 
-GLfloat verticesTrackBall[][3] =
-		{ { 0.0, 0.0, 0.0 }, { w, 0.0, 0.0 }, { w, h, 0.0 }, { 0.0, h, 0.0 }, {
-				0.0, 0.0, WALL_HEIGHT }, { w, 0.0, WALL_HEIGHT }, { w, h,
-				WALL_HEIGHT }, { 0.0, h, WALL_HEIGHT } };
+GLfloat verticesTrackBall[][3] = { { 0.0, 0.0, 0.0 }, { w, 0.0, 0.0 }, { w, h, 0.0 }, { 0.0, h, 0.0 }, { 0.0, 0.0,
+		WALL_HEIGHT }, { w, 0.0, WALL_HEIGHT }, { w, h, WALL_HEIGHT }, { 0.0, h, WALL_HEIGHT } };
 
 /* init_maze initializes a w1 by h1 maze.  all walls are initially
  included.  the edge and perimeter arrays, vertex array, and group
@@ -521,10 +524,8 @@ void setLookAt() {
 		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	} else {
 
-		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0,
-				currentPositionX + cos(currentAngle),
-				currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0,
-				0.0, 1.0);
+		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),
+				currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
 
 	}
 }
@@ -578,8 +579,7 @@ void drawDot() {
 	//glNormal3fv(faceNormals[4]);
 	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, 4.0, 4.0);
 
-	gluCylinder(gluNewQuadric(), WALL_WIDTH_DELTA, WALL_WIDTH_DELTA, 0.6, 4.0,
-			4.0);
+	gluCylinder(gluNewQuadric(), WALL_WIDTH_DELTA, WALL_WIDTH_DELTA, 0.6, 4.0, 4.0);
 
 	glTranslatef(0.0, 0.0, 0.6);
 	//glNormal3fv(faceNormals[5]);
@@ -587,7 +587,12 @@ void drawDot() {
 	glPopMatrix();
 }
 
-void display() {
+void display(GLint prog) {
+	loc = glGetAttribLocation(prog, "attr_color");
+	tLoc = glGetAttribLocation(prog, "localAttr");
+
+	glEnable(GL_DEPTH_TEST);
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	if (displayMode == TRACKBALL) {
 		resetAndApplyAllTransforms();
@@ -597,6 +602,7 @@ void display() {
 	if (displayMode == TRACKBALL) {
 		drawDot();
 	}
+	glFlush();
 }
 
 // update the modelview matrix with a new translation in the z direction
@@ -686,10 +692,8 @@ void update_rotate(int x1, int y1, int x2, int y2) {
 		// the amount of rotation is proportional to the magnitude of the
 		// difference between the vectors
 		t = sqrt(
-				(p1[0] - p2[0]) * (p1[0] - p2[0])
-						+ (p1[1] - p2[1]) * (p1[1] - p2[1])
-						+ (p1[2] - p2[2]) * (p1[2] - p2[2]))
-				/ (2.0 * TRACKBALLSIZE);
+				(p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
+						+ (p1[2] - p2[2]) * (p1[2] - p2[2])) / (2.0 * TRACKBALLSIZE);
 
 		if (t > 1.0) {
 			t = 1.0;
@@ -774,7 +778,6 @@ void gfxinit() {
 		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation1);
 		glLoadIdentity();
 
-
 		//glMultMatrixf(trackballTranslation1);
 
 		glViewport(0, 0, RESOLUTION, RESOLUTION);
@@ -783,7 +786,6 @@ void gfxinit() {
 
 		setLookAt();
 		build_maze();
-
 
 		currentPositionX = -1.6 + rand() % 4;
 		currentPositionY = -1.3 + rand() % 3;
@@ -835,7 +837,15 @@ void gfxinit() {
 class GLBox {
 public:
 	GLBox() {
-		App = new sf::Window(sf::VideoMode(RESOLUTION, RESOLUTION, 32), "Maze");
+		//create a clock for measuring time elapsed
+		Clock = sf::Clock();
+
+		ysize = xsize = RESOLUTION;
+
+		//new SFML window and OpenGL context
+		App = new sf::Window(sf::VideoMode(xsize, ysize, 32), "Maze");
+
+		//log file to record any errors that come up
 
 		FILE * logFile;
 		logFile = fopen("log.txt", "wb");
@@ -844,13 +854,33 @@ public:
 			exit(2);
 		}
 
+		//need to detect which version of shaders are supported
+
 		__glewInit(logFile);
+
+		//this class handles shader creation for ARB and 2.0 shaders
 		ShaderManager shaders = ShaderManager(logFile);
 
-		const char * vertPath = "Shaders/shader.vert";
-		const char * fragPath = "Shaders/shader.frag";
-		prog = shaders.buildShaderProgram(&vertPath, &fragPath, 1, 1);
-		loc = glGetAttribLocation(prog, "attr_color");
+		//source code for maze shader
+//		const char * mazeVertPath = "Shaders/maze.vert";
+//		const char * mazeFragPath = "Shaders/maze.frag";
+		const char * mazeVertPath = "Shaders/shader.vert";
+		const char * mazeFragPath = "Shaders/shader.frag";
+		GLint progMaze = shaders.buildShaderProgram(&mazeVertPath, &mazeFragPath, 1, 1);
+
+		//source code for texture shader
+		const char * textureVertPath = "Shaders/texture.vert";
+		const char * textureFragPath = "Shaders/texture.frag";
+		GLint progTex = shaders.buildShaderProgram(&textureVertPath, &textureFragPath, 1, 1);
+
+		//setup render target texture
+		//this will eventually hald the rendered scene and be
+		//rendered to a quad for post process effects
+		int numTex = 1;
+		glGenTextures(numTex, &textureTarget);
+		setupTargetTexture();
+
+		//build the maze
 		gfxinit();
 
 		while (App->IsOpened()) {
@@ -862,14 +892,23 @@ public:
 			App->SetActive();
 			handleEvents();
 
-			glUseProgram(prog);
-
+			//glUseProgram(progMaze);
 			if (displayMode == TRACKBALL)
 				SpinCube2(0);
 
-			setShaderVariables();
+			//setShaderVariables(progMaze);
 
-			display();
+			//display(progMaze);
+
+			//clear color and depth before rendering
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			//render maze to framebuffer
+			renderModel(progMaze);
+
+			//render texture pass
+			//renderTexture(progTex);
+
 			App->Display();
 		}
 
@@ -881,16 +920,12 @@ private:
 	sf::Clock motionClock;
 	sf::Clock motionClock2;
 	float timeSinceMotion;
+	sf::Clock Clock;
+	GLint progMaze;
+	GLuint textureTarget;
 
 	void updateView() {
 		setLookAt();
-	}
-
-	void setShaderVariables() {
-		glUniform1f(glGetUniformLocation(prog, "elapsedTime"),
-				motionClock2.GetElapsedTime());
-		glUniform1f(glGetUniformLocation(prog, "cameraX"), currentPositionX);
-		glUniform1f(glGetUniformLocation(prog, "cameraY"), currentPositionY);
 	}
 
 	void handleHorizontalCameraRotate(int direction) {
@@ -921,15 +956,13 @@ private:
 			currentPositionY = newY;
 		}
 
-		cout << "(" << currentPositionX << "," << currentPositionY << ")"
-				<< endl;
+		cout << "(" << currentPositionX << "," << currentPositionY << ")" << endl;
 		setLookAt();
 	}
 
 	void handleEvents() {
 		const sf::Input& Input = App->GetInput();
-		bool shiftDown = Input.IsKeyDown(sf::Key::LShift)
-				|| Input.IsKeyDown(sf::Key::RShift);
+		bool shiftDown = Input.IsKeyDown(sf::Key::LShift) || Input.IsKeyDown(sf::Key::RShift);
 		sf::Event Event;
 		while (App->GetEvent(Event)) {
 			// Close window : exit
@@ -937,36 +970,30 @@ private:
 				App->Close();
 
 			// Escape key : exit
-			if ((Event.Type == sf::Event::KeyPressed)
-					&& (Event.Key.Code == sf::Key::Escape))
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Escape))
 				App->Close();
 
-			if ((Event.Type == sf::Event::KeyPressed)
-					&& (Event.Key.Code == sf::Key::Right)) {
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Right)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraRotate(RIGHT);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed)
-					&& (Event.Key.Code == sf::Key::Left)) {
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Left)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraRotate(LEFT);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed)
-					&& (Event.Key.Code == sf::Key::Up)) {
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Up)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraMove(UP);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed)
-					&& (Event.Key.Code == sf::Key::Down)) {
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Down)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraMove(DOWN);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed)
-					&& (Event.Key.Code == sf::Key::M)) {
+			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::M)) {
 				//resetModelViewMatrix();
 				glLoadIdentity();
 				displayMode = (displayMode + 1) % 2;
@@ -978,8 +1005,7 @@ private:
 					lastPos[0] = Event.MouseButton.X;
 					lastPos[1] = Event.MouseButton.Y;
 
-					if (Event.MouseButton.Button == sf::Mouse::Left
-							&& !shiftDown) {
+					if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown) {
 						buttonDown[0] = 1;
 						spin = FALSE;
 					}
@@ -987,21 +1013,18 @@ private:
 						buttonDown[1] = 1;
 					if (Event.MouseButton.Button == sf::Mouse::Middle)
 						buttonDown[2] = 1;
-					if (Event.MouseButton.Button == sf::Mouse::Left
-							&& shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
 						buttonDown[2] = 1;
 				}
 
 				if (Event.Type == sf::Event::MouseButtonReleased) {
-					if (Event.MouseButton.Button == sf::Mouse::Left
-							&& !shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown)
 						buttonDown[0] = 0;
 					if (Event.MouseButton.Button == sf::Mouse::Right)
 						buttonDown[1] = 0;
 					if (Event.MouseButton.Button == sf::Mouse::Middle)
 						buttonDown[2] = 0;
-					if (Event.MouseButton.Button == sf::Mouse::Left
-							&& shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
 						buttonDown[2] = 0;
 
 					timeSinceMotion = motionClock.GetElapsedTime();
@@ -1010,8 +1033,7 @@ private:
 						spin = TRUE;
 				}
 
-				if (Event.Type == sf::Event::MouseMoved
-						&& (buttonDown[0] || buttonDown[1] || buttonDown[2])) {
+				if (Event.Type == sf::Event::MouseMoved && (buttonDown[0] || buttonDown[1] || buttonDown[2])) {
 					int x = Event.MouseMove.X;
 					int y = Event.MouseMove.Y;
 
@@ -1031,53 +1053,142 @@ private:
 			}
 			if (Event.Type == sf::Event::Resized) {
 				reshape(Event.Size.Width, Event.Size.Height);
+				setupTargetTexture();
 			}
 		}
 	}
 
-	void __glewInit(FILE * logFile) const {
+	void setShaderVariables(GLuint shaderProg) {
+		glUniform1f(glGetUniformLocation(shaderProg, "elapsedTime"), motionClock2.GetElapsedTime());
+		glUniform1f(glGetUniformLocation(shaderProg, "cameraX"), currentPositionX);
+		glUniform1f(glGetUniformLocation(shaderProg, "cameraY"), currentPositionY);
+
+		if (__GLEW_VERSION_2_0) {
+			glUniform1f(glGetUniformLocation(shaderProg, "elapsedTime"), Clock.GetElapsedTime());
+			glUniform2f(glGetUniformLocation(shaderProg, "resolution"), xsize, ysize);
+		} else {
+			glUniform1fARB(glGetUniformLocationARB(shaderProg, "elapsedTime"), Clock.GetElapsedTime());
+			glUniform2fARB(glGetUniformLocationARB(shaderProg, "resolution"), xsize, ysize);
+		}
+	}
+
+	void setupTargetTexture() {
+		glBindTexture(GL_TEXTURE_2D, textureTarget);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, xsize, ysize, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	}
+
+	void renderModel(GLint program) {
+		if (__GLEW_VERSION_2_0)
+			glUseProgram(program);
+		else
+			glUseProgramObjectARB(program);
+		setShaderVariables(program);
+		display(program);
+	}
+
+	void renderTexture(GLint program) {
+		//copy frame buffer to texture
+		glBindTexture(GL_TEXTURE_2D, textureTarget);
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, xsize, ysize, 0);
+
+		//activate texture shader program
+		if (__GLEW_VERSION_2_0)
+			glUseProgram(program);
+		else
+			glUseProgramObjectARB(program);
+		setShaderVariables(program);
+
+		//prepare to render texture quad
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_LIGHTING);
+		glDisable(GL_CULL_FACE);
+		glEnable(GL_TEXTURE_2D);
+
+		//set shader variables to help with texture render
+		int textureUnit = 0;
+		if (__GLEW_VERSION_2_0) {
+			glUniform1i(glGetUniformLocation(program, "texId"), textureUnit);
+			glUniform2f(glGetUniformLocation(program, "resolution"), xsize, ysize);
+			glActiveTexture(GL_TEXTURE0 + textureUnit);
+		} else {
+			glUniform1iARB(glGetUniformLocationARB(program, "texId"), textureUnit);
+			glUniform2fARB(glGetUniformLocationARB(program, "resolution"), xsize, ysize);
+			glActiveTexture(GL_TEXTURE0 + textureUnit);
+		}
+
+		//bind texture
+		glBindTexture(GL_TEXTURE_2D, textureTarget);
+
+		//set viewport to entire window
+		glViewport(0, 0, xsize, ysize);
+
+		//matrices for full view quad render
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluOrtho2D(0, 1, 0, 1);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
+		//render quad with texture vertices
+		glBegin(GL_QUADS);
+		glTexCoord2f(0, 0);
+		glVertex2f(0, 0);
+		glTexCoord2f(1, 0);
+		glVertex2f(1, 0);
+		glTexCoord2f(1, 1);
+		glVertex2f(1, 1);
+		glTexCoord2f(0, 1);
+		glVertex2f(0, 1);
+		glEnd();
+	}
+
+	void __glewInit(FILE * logFile = NULL) const {
 		GLenum err = glewInit();
 		if (GLEW_OK != err) {
-			/* Problem: glewInit failed, something is seriously wrong. */
+			//Problem: glewInit failed, something is seriously wrong.
 			fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-			fprintf(logFile, "Error: %s\n", glewGetErrorString(err));
+			if(logFile!=NULL) fprintf(logFile, "Error: %s\n", glewGetErrorString(err));
 		}
 		else
 		{
 			printf("GLEW init finished...\n");
-			fprintf(logFile, "GLEW init finished...\n");
+			if(logFile!=NULL) fprintf(logFile, "GLEW init finished...\n");
 			if( __GLEW_VERSION_2_0 )
 			{
 				printf("OpenGL 2.0 is supported. Shaders should run correctly.\n");
-				fprintf(logFile, "OpenGL 2.0 is supported. Shaders should run correctly.\n");
+				if(logFile!=NULL) fprintf(logFile, "OpenGL 2.0 is supported. Shaders should run correctly.\n");
 			}
 			else
 			{
 				printf("OpenGL 2.0 is NOT enabled. The program may not work correctly.\n");
-				fprintf(logFile, "OpenGL 2.0 is NOT enabled. The program may not work correctly.\n");
-			}
+				if(logFile!=NULL) fprintf(logFile,"OpenGL 2.0 is NOT enabled. The program may not work correctly.\n");
+	            }
 
-			if( GLEW_ARB_vertex_program )
-			{
-				printf("ARB vertex programs supported.\n");
-				fprintf(logFile, "ARB vertex programs supported.\n");
-			}
-			else
-			{
-				printf("ARB vertex programs NOT supported. The program may not work correctly.\n");
-				fprintf(logFile, "ARB vertex programs NOT supported. The program may not work correctly.\n");
-			}
-			if( GLEW_ARB_fragment_program )
-			{
-				printf("ARB fragment programs supported.\n");
-				fprintf(logFile, "ARB fragment programs supported.\n");
-			}
-			else
-			{
-				printf("ARB fragment programs NOT supported. The program may not work correctly.\n");
-				fprintf(logFile, "ARB fragment programs NOT supported. The program may not work correctly.\n");
-			}
-		}
+	            if( GLEW_ARB_vertex_program )
+	            {
+	                printf("ARB vertex programs supported.\n");
+	                if(logFile!=NULL) fprintf(logFile, "ARB vertex programs supported.\n");
+	            }
+	            else
+	            {
+	                printf("ARB vertex programs NOT supported. The program may not work correctly.\n");
+	                if(logFile!=NULL) fprintf(logFile, "ARB vertex programs NOT supported. The program may not work correctly.\n");
+	            }
+	            if( GLEW_ARB_fragment_program )
+	            {
+	                printf("ARB fragment programs supported.\n");
+	                if(logFile!=NULL) fprintf(logFile, "ARB fragment programs supported.\n");
+	            }
+	            else
+	            {
+	                printf("ARB fragment programs NOT supported. The program may not work correctly.\n");
+	                if(logFile!=NULL) fprintf(logFile, "ARB fragment programs NOT supported. The program may not work correctly.\n");
+	            }
+	        }
 		}
 	};
 
