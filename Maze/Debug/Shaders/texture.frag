@@ -18,7 +18,6 @@ vec2 getWaveOffset()
 
 vec4 blur(sampler2D texId, vec2 texPos){
 	
-	
 	float distanceToCenter = distance(texPos,vec2(0.5));
 	
 	
