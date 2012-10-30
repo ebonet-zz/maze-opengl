@@ -51,20 +51,20 @@ int buttonDown[3] = { 0, 0 };
 int spin = FALSE;                    // are we spinning?
 int xsize, ysize;                  // window size
 
-
 GLint loc;
 
 //Shader program
 GLint prog;
 const char* NORMAL_ATTRIBUTE_NAME = "meshNormal";
 
-GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, {
-		1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
+GLfloat colors[][3] = { { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 },
+		{ 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 },
+		{ 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
 GLfloat GRAY[3] = { 0.5, 0.5, 0.5 };
 GLfloat YELLOW[3] = { 1.0, 1.0, 0.3 };
 
-GLfloat faceNormals[][3] = { { 1.0, 0.0, 0.0 }, { -1.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, -1.0, 0.0 }, { 0.0, 0.0,
-		1.0 }, { 0.0, 0.0, -1.0 } };
+GLfloat faceNormals[][3] = { { 1.0, 0.0, 0.0 }, { -1.0, 0.0, 0.0 }, { 0.0, 1.0,
+		0.0 }, { 0.0, -1.0, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0, -1.0 } };
 
 /* 2D point structure */
 typedef struct {
@@ -174,7 +174,7 @@ struct Wall {
 	void draw_mesh(int a, int b, int c, int d, int normal) {
 		glBegin(GL_POLYGON);
 		{
-			glNormal3fv( faceNormals[normal]);
+			glNormal3fv(faceNormals[normal]);
 			draw_vertex(colors[a], vertices[a]);
 			draw_vertex(colors[b], vertices[b]);
 			draw_vertex(colors[c], vertices[c]);
@@ -200,6 +200,34 @@ struct Wall {
 			draw_mesh(5, 4, 0, 1, 0);
 		}
 	}
+};
+
+struct Bound {
+
+	float xMin, xMax, yMin, yMax;
+	Bound(Point2 * p1, Point2 * p2) {
+		xMin = xMax = yMin = yMax = 0;
+
+		// is vertical
+		if (p1->x == p2->x) {
+			xMin = p1->x - 2 * WALL_WIDTH_DELTA;
+			xMax = p1->x + 2 * WALL_WIDTH_DELTA;
+			yMax = p2->y + 2 * WALL_WIDTH_DELTA;
+			yMin = p1->y - 2 * WALL_WIDTH_DELTA;
+		}
+		// is horizontal
+		else {
+			xMin = p1->x - 2 * WALL_WIDTH_DELTA;
+			xMax = p2->x + 2 * WALL_WIDTH_DELTA;
+			yMin = p1->y - 2 * WALL_WIDTH_DELTA;
+			yMax = p1->y + 2 * WALL_WIDTH_DELTA;
+		}
+
+	}
+
+	bool isPointInsideBound(float x, float y) {
+		return (x >= xMin) && (x <= xMax) && (y >= yMin) && (y <= yMax);
+	}
 
 };
 
@@ -208,16 +236,20 @@ int w, h, edges, perimeters, vertices, groups, *group = NULL, redges, done = 0;
 Edge *edge = NULL, *perimeter = NULL;
 Point2 *vertex = NULL;
 vector<Wall> walls;
+vector<Bound> bounds;
 
 // Storage space for the various transformations we'll need
-float trackballTranslation1[16], trackballTranslation2[16], trackballRotation[16], trackballIncRotation[16];
+float trackballTranslation1[16], trackballTranslation2[16],
+		trackballRotation[16], trackballIncRotation[16];
 float mazeTranslation[16], mazeRotation[16];
 float currentAngle = 0;
 float currentPositionX = 0;
 float currentPositionY = 0;
 
-GLfloat verticesTrackBall[][3] = { { 0.0, 0.0, 0.0 }, { w, 0.0, 0.0 }, { w, h, 0.0 }, { 0.0, h, 0.0 }, { 0.0, 0.0,
-		WALL_HEIGHT }, { w, 0.0, WALL_HEIGHT }, { w, h, WALL_HEIGHT }, { 0.0, h, WALL_HEIGHT } };
+GLfloat verticesTrackBall[][3] =
+		{ { 0.0, 0.0, 0.0 }, { w, 0.0, 0.0 }, { w, h, 0.0 }, { 0.0, h, 0.0 }, {
+				0.0, 0.0, WALL_HEIGHT }, { w, 0.0, WALL_HEIGHT }, { w, h,
+				WALL_HEIGHT }, { 0.0, h, WALL_HEIGHT } };
 
 /* init_maze initializes a w1 by h1 maze.  all walls are initially
  included.  the edge and perimeter arrays, vertex array, and group
@@ -431,6 +463,33 @@ void create_walls() {
 	}
 }
 
+void create_bounds() {
+	bounds.clear();
+
+	Point2 * p1, *p2;
+	int i;
+	for (i = 0; i < edges; i++) {
+		if (edge[i].draw == TRUE) {
+
+			p1 = vertex + edge[i].vertex1;
+			p2 = vertex + edge[i].vertex2;
+
+			bounds.push_back(Bound(p1, p2));
+		}
+	}
+	/* draw the perimeter edges */
+	for (i = 0; i < perimeters; i++) {
+		if (perimeter[i].draw == TRUE) {
+
+			p1 = vertex + perimeter[i].vertex1;
+			p2 = vertex + perimeter[i].vertex2;
+
+			bounds.push_back(Bound(p1, p2));
+		}
+	}
+
+}
+
 void build_maze() {
 	done = 0;
 	/* build maze */
@@ -440,6 +499,7 @@ void build_maze() {
 		remove_one_edge();
 	}
 	create_walls();
+	create_bounds();
 }
 
 void draw_maze(void) {
@@ -461,8 +521,10 @@ void setLookAt() {
 		gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	} else {
 
-		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0, currentPositionX + cos(currentAngle),
-				currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0, 0.0, 1.0);
+		gluLookAt(currentPositionX, currentPositionY, WALL_HEIGHT / 2.0,
+				currentPositionX + cos(currentAngle),
+				currentPositionY + sin(currentAngle), WALL_HEIGHT / 2.0, 0.0,
+				0.0, 1.0);
 
 	}
 }
@@ -493,7 +555,6 @@ void incrementRotation() {
 
 void drawFloor() {
 
-
 	//glColor3fv(GRAY);
 	glVertexAttrib3fv(loc, GRAY);
 	glBegin(GL_QUADS);
@@ -517,7 +578,8 @@ void drawDot() {
 	//glNormal3fv(faceNormals[4]);
 	gluDisk(gluNewQuadric(), 0, WALL_WIDTH_DELTA, 4.0, 4.0);
 
-	gluCylinder(gluNewQuadric(), WALL_WIDTH_DELTA, WALL_WIDTH_DELTA, 0.6, 4.0, 4.0);
+	gluCylinder(gluNewQuadric(), WALL_WIDTH_DELTA, WALL_WIDTH_DELTA, 0.6, 4.0,
+			4.0);
 
 	glTranslatef(0.0, 0.0, 0.6);
 	//glNormal3fv(faceNormals[5]);
@@ -624,8 +686,10 @@ void update_rotate(int x1, int y1, int x2, int y2) {
 		// the amount of rotation is proportional to the magnitude of the
 		// difference between the vectors
 		t = sqrt(
-				(p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
-						+ (p1[2] - p2[2]) * (p1[2] - p2[2])) / (2.0 * TRACKBALLSIZE);
+				(p1[0] - p2[0]) * (p1[0] - p2[0])
+						+ (p1[1] - p2[1]) * (p1[1] - p2[1])
+						+ (p1[2] - p2[2]) * (p1[2] - p2[2]))
+				/ (2.0 * TRACKBALLSIZE);
 
 		if (t > 1.0) {
 			t = 1.0;
@@ -658,6 +722,17 @@ void SpinCube2(int t) {
 	if (spin) {  // if we're still spinning, increment the rotation
 		incrementRotation();
 	}
+}
+
+bool isWall(float x, float y) {
+
+	for (unsigned int i = 0; i < bounds.size(); i++) {
+		if (bounds[i].isPointInsideBound(x, y))
+			return true;
+	}
+
+	return false;
+
 }
 
 void reshape(int w, int h) {
@@ -699,8 +774,6 @@ void gfxinit() {
 		glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *) &trackballTranslation1);
 		glLoadIdentity();
 
-		currentPositionX = -1.6 + rand() % 4;
-		currentPositionY = -1.3 + rand() % 3;
 
 		//glMultMatrixf(trackballTranslation1);
 
@@ -710,6 +783,16 @@ void gfxinit() {
 
 		setLookAt();
 		build_maze();
+
+
+		currentPositionX = -1.6 + rand() % 4;
+		currentPositionY = -1.3 + rand() % 3;
+
+		while (isWall(currentPositionX, currentPositionY)) {
+			currentPositionX = -1.6 + rand() % 4;
+			currentPositionY = -1.3 + rand() % 3;
+		}
+
 	} else {
 		int i;
 		float x = 0, y = 0, z = 0;
@@ -781,7 +864,6 @@ public:
 
 			glUseProgram(prog);
 
-
 			if (displayMode == TRACKBALL)
 				SpinCube2(0);
 
@@ -805,7 +887,8 @@ private:
 	}
 
 	void setShaderVariables() {
-		glUniform1f(glGetUniformLocation(prog, "elapsedTime"), motionClock2.GetElapsedTime());
+		glUniform1f(glGetUniformLocation(prog, "elapsedTime"),
+				motionClock2.GetElapsedTime());
 		glUniform1f(glGetUniformLocation(prog, "cameraX"), currentPositionX);
 		glUniform1f(glGetUniformLocation(prog, "cameraY"), currentPositionY);
 	}
@@ -816,30 +899,37 @@ private:
 	}
 
 	void handleHorizontalCameraMove(int direction) {
-		currentPositionX += cos(currentAngle) * direction * 0.05;
-		currentPositionY += sin(currentAngle) * direction * 0.05;
+		float newX = currentPositionX + cos(currentAngle) * direction * 0.05;
+		float newY = currentPositionY + sin(currentAngle) * direction * 0.05;
 
-		if (currentPositionX > 1.7) {
-			currentPositionX = 1.7;
+		if (newX > 1.7) {
+			newX = 1.7;
 		}
-		if (currentPositionX < -1.7) {
-			currentPositionX = -1.7;
-		}
-
-		if (currentPositionY > 1.7) {
-			currentPositionY = 1.7;
-		}
-		if (currentPositionY < -1.7) {
-			currentPositionY = -1.7;
+		if (newX < -1.7) {
+			newX = -1.7;
 		}
 
-		cout << "(" << currentPositionX << "," << currentPositionY << ")" << endl;
+		if (newY > 1.7) {
+			newY = 1.7;
+		}
+		if (newY < -1.7) {
+			newY = -1.7;
+		}
+
+		if (!isWall(newX, newY)) {
+			currentPositionX = newX;
+			currentPositionY = newY;
+		}
+
+		cout << "(" << currentPositionX << "," << currentPositionY << ")"
+				<< endl;
 		setLookAt();
 	}
 
 	void handleEvents() {
 		const sf::Input& Input = App->GetInput();
-		bool shiftDown = Input.IsKeyDown(sf::Key::LShift) || Input.IsKeyDown(sf::Key::RShift);
+		bool shiftDown = Input.IsKeyDown(sf::Key::LShift)
+				|| Input.IsKeyDown(sf::Key::RShift);
 		sf::Event Event;
 		while (App->GetEvent(Event)) {
 			// Close window : exit
@@ -847,30 +937,36 @@ private:
 				App->Close();
 
 			// Escape key : exit
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Escape))
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Escape))
 				App->Close();
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Right)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Right)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraRotate(RIGHT);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Left)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Left)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraRotate(LEFT);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Up)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Up)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraMove(UP);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::Down)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::Down)) {
 				if (displayMode == MAZE)
 					handleHorizontalCameraMove(DOWN);
 			}
 
-			if ((Event.Type == sf::Event::KeyPressed) && (Event.Key.Code == sf::Key::M)) {
+			if ((Event.Type == sf::Event::KeyPressed)
+					&& (Event.Key.Code == sf::Key::M)) {
 				//resetModelViewMatrix();
 				glLoadIdentity();
 				displayMode = (displayMode + 1) % 2;
@@ -882,7 +978,8 @@ private:
 					lastPos[0] = Event.MouseButton.X;
 					lastPos[1] = Event.MouseButton.Y;
 
-					if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown) {
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& !shiftDown) {
 						buttonDown[0] = 1;
 						spin = FALSE;
 					}
@@ -890,18 +987,21 @@ private:
 						buttonDown[1] = 1;
 					if (Event.MouseButton.Button == sf::Mouse::Middle)
 						buttonDown[2] = 1;
-					if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& shiftDown)
 						buttonDown[2] = 1;
 				}
 
 				if (Event.Type == sf::Event::MouseButtonReleased) {
-					if (Event.MouseButton.Button == sf::Mouse::Left && !shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& !shiftDown)
 						buttonDown[0] = 0;
 					if (Event.MouseButton.Button == sf::Mouse::Right)
 						buttonDown[1] = 0;
 					if (Event.MouseButton.Button == sf::Mouse::Middle)
 						buttonDown[2] = 0;
-					if (Event.MouseButton.Button == sf::Mouse::Left && shiftDown)
+					if (Event.MouseButton.Button == sf::Mouse::Left
+							&& shiftDown)
 						buttonDown[2] = 0;
 
 					timeSinceMotion = motionClock.GetElapsedTime();
@@ -910,7 +1010,8 @@ private:
 						spin = TRUE;
 				}
 
-				if (Event.Type == sf::Event::MouseMoved && (buttonDown[0] || buttonDown[1] || buttonDown[2])) {
+				if (Event.Type == sf::Event::MouseMoved
+						&& (buttonDown[0] || buttonDown[1] || buttonDown[2])) {
 					int x = Event.MouseMove.X;
 					int y = Event.MouseMove.Y;
 
@@ -977,8 +1078,8 @@ private:
 				fprintf(logFile, "ARB fragment programs NOT supported. The program may not work correctly.\n");
 			}
 		}
-	}
-};
+		}
+	};
 
 int main(int argc, char **argv) {
 #ifdef __APPLE__
